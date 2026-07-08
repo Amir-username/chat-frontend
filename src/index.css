@@ -1,0 +1,209 @@
+@import "tailwindcss";
+
+/* ===========================================================================
+   Theme tokens — Tailwind v4 CSS-first config.
+   These generate utilities like `bg-bg-0`, `text-fg-1`, `border-border`,
+   `text-accent`, etc. The palette mirrors the previous CSS variables so the
+   app looks identical after the migration.
+   =========================================================================== */
+@theme {
+  /* Background scale (dark, Discord/Slack-ish) */
+  --color-bg-0: #0b0d12;
+  --color-bg-1: #13161d;
+  --color-bg-2: #1c2029;
+  --color-bg-3: #252a36;
+
+  /* Foreground scale */
+  --color-fg-0: #e6e9ef;
+  --color-fg-1: #aeb4c0;
+  --color-fg-2: #6b7280;
+
+  /* Accents */
+  --color-accent: #6366f1;
+  --color-accent-hover: #4f46e5;
+  --color-danger: #ef4444;
+  --color-success: #22c55e;
+  --color-warn: #f59e0b;
+
+  /* Radii */
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  /* Fonts */
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono",
+    Menlo, Consolas, monospace;
+}
+
+/* ===========================================================================
+   Base styles
+   =========================================================================== */
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--color-bg-0);
+  color: var(--color-fg-0);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color-scheme: dark;
+}
+
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+a:hover {
+  color: var(--color-accent-hover);
+}
+
+input,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: var(--color-fg-0);
+  background: var(--color-bg-2);
+  border: 1px solid var(--color-border, var(--color-bg-3));
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+input:focus,
+textarea:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+/* ===========================================================================
+   Component classes — composed via @apply for the reusable UI primitives.
+   =========================================================================== */
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2.5
+           font-medium transition-[background,transform] duration-150
+           border border-transparent active:translate-y-px disabled:opacity-55
+           disabled:cursor-not-allowed;
+  }
+  .btn-primary {
+    @apply bg-accent text-white hover:bg-accent-hover;
+  }
+  .btn-secondary {
+    @apply bg-bg-2 border-bg-3 text-fg-0 hover:bg-bg-3;
+  }
+  .btn-ghost {
+    @apply bg-transparent text-fg-1 hover:bg-bg-2 hover:text-fg-0;
+  }
+  .btn-danger {
+    @apply bg-red-500/10 text-red-500 border-red-500/30;
+  }
+
+  /* Auth card — login/register pages */
+  .auth-card {
+    @apply w-full max-w-[400px] bg-bg-1 border border-bg-3 rounded-lg p-8;
+  }
+  .auth-card h1 {
+    @apply m-0 mb-1 text-[22px] font-semibold;
+  }
+  .auth-card .subtitle {
+    @apply text-fg-1 m-0 mb-6 text-[13px];
+  }
+  .auth-card .field {
+    @apply mb-4;
+  }
+  .auth-card .field label {
+    @apply block mb-1.5 text-xs text-fg-1 font-medium uppercase tracking-wide;
+  }
+  .auth-card .field input {
+    @apply w-full;
+  }
+  .auth-card .error {
+    @apply bg-red-500/10 text-red-500 border border-red-500/30 rounded-md
+           px-3 py-2.5 mb-4 text-[13px];
+  }
+  .auth-card .success {
+    @apply bg-green-500/10 text-green-500 border border-green-500/30 rounded-md
+           px-3 py-2.5 mb-4 text-[13px];
+  }
+  .auth-card .switch-link {
+    @apply text-center mt-5 text-[13px] text-fg-1;
+  }
+
+  /* Sidebar resize handle (desktop only) */
+  .resize-handle {
+    @apply relative z-[5] w-[7px] flex-shrink-0 cursor-col-resize
+           bg-transparent transition-colors duration-150;
+  }
+  .resize-handle::before {
+    content: "";
+    @apply absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-0.5
+           bg-bg-3 transition-colors duration-150;
+  }
+  .resize-handle:hover::before,
+  .resize-handle--active::before {
+    background: var(--color-accent);
+  }
+  .resize-handle--active {
+    background: rgba(99, 102, 241, 0.15);
+  }
+
+  /* Mobile drawer */
+  .drawer {
+    @apply fixed top-0 left-0 bottom-0 z-50 max-w-[320px]
+           -translate-x-full transition-transform duration-200 ease-out;
+    width: 85vw;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
+  }
+  .drawer--open {
+    @apply translate-x-0;
+  }
+  .drawer-backdrop {
+    @apply fixed inset-0 z-40 bg-black/50;
+    animation: fade-in 0.2s ease;
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* Hamburger button */
+  .hamburger {
+    @apply inline-flex items-center justify-center w-9 h-9 rounded-md
+           text-fg-1 flex-shrink-0 transition-colors;
+  }
+  .hamburger:hover {
+    @apply bg-bg-2 text-fg-0;
+  }
+  .hamburger:active {
+    @apply bg-bg-3;
+  }
+}
+
+/* ===========================================================================
+   Mobile tweaks — applied via media query since they target specific elements.
+   =========================================================================== */
+@media (max-width: 768px) {
+  .auth-card {
+    @apply px-5 py-6 max-w-full;
+  }
+  .message-list {
+    @apply px-3;
+  }
+  .message-input {
+    @apply px-3 pb-3 gap-2;
+  }
+  /* Prevent iOS zoom-on-focus: inputs need >=16px font. */
+  input,
+  textarea {
+    font-size: 16px;
+  }
+}
