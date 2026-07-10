@@ -37,7 +37,7 @@ export default function RoomSidebar({
 
   return (
     <aside
-      className="flex-shrink-0 bg-bg-1 border-r border-bg-3 flex flex-col h-full"
+      className="shrink-0 bg-bg-1 border-r border-bg-3 flex flex-col h-full"
       // `width` is dynamic (driven by the resize hook) so it stays inline.
       // On mobile `width` is undefined → fill the drawer container.
       style={width !== undefined ? { width } : { width: "100%" }}
@@ -81,7 +81,7 @@ export default function RoomSidebar({
       {/* Join a new room — pinned above the user footer, never scrolls. */}
       <form
         onSubmit={handleJoin}
-        className="px-2 py-3 flex gap-1.5 flex-shrink-0"
+        className="px-2 py-3 flex gap-1.5 shrink-0"
       >
         <input
           type="text"
@@ -100,7 +100,7 @@ export default function RoomSidebar({
       </form>
 
       {/* User footer */}
-      <div className="px-4 py-3 border-t border-bg-3 flex items-center justify-between gap-2">
+      <div className="px-4 py-4.5 border-t border-bg-3 flex items-center justify-between gap-2">
         <div className="min-w-0 flex-1">
           <div
             className="text-[13px] text-fg-0 whitespace-nowrap overflow-hidden text-ellipsis"
