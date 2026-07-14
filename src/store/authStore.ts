@@ -12,35 +12,27 @@
 //     optimization in the Context version) — Zustand handles that internally.
 //
 // Lifecycle:
-//   - On store creation: if we have a stored access token, call
-//     /auth/me/profile to hydrate the user. If that 401s, the axios
-//     interceptor tries to refresh transparently; if even that fails, the
-//     user is logged out.
-//   - login(payload)    -> POST /auth/login/json, store tokens, fetch profile
+//   - On store creation: if we have a stored access token, call /auth/me to
+//     hydrate the user. If that 401s, the axios interceptor tries to refresh
+//     transparently; if even that fails, the user is logged out.
+//   - login(payload)    -> POST /auth/login/json, store tokens, fetch /me
 //   - register(payload) -> POST /auth/register (no auto-login; caller decides)
 //   - logout()          -> POST /auth/logout, clear tokens, null user
-//   - setProfile(p)     -> Update the cached profile (used by ProfilePage
-//                          after a successful edit/image upload)
 // ---------------------------------------------------------------------------
 
 import { create } from "zustand";
-import * as authApi from "../api/auth";
-import { getMyProfile } from "../api/profile";
-import { tokenStorage } from "@/shared/api/tokens";
-import { useRoomsStore } from "@/features/chat/store/roomsStore";
+import * as authApi from "@/api/auth";
+import { tokenStorage } from "@/api/tokens";
 import type {
   LoginPayload,
-  ProfileResponse,
   RegisterPayload,
+  UserOut,
   UserResponse,
-} from "@/shared/types";
+} from "@/types";
 
 interface AuthState {
-  /** Cached current-user profile. We hydrate from /auth/me/profile (not
-   *  /auth/me) because it returns name/bio/profile_image in addition to
-   *  the standard UserOut fields — so the whole app has access. */
-  user: ProfileResponse | null;
-  /** True until the initial profile check finishes. Use this to gate the router. */
+  user: UserOut | null;
+  /** True until the initial /me check finishes. Use this to gate the router. */
   loading: boolean;
   /** Error from the last login/register attempt (cleared on success). */
   error: string | null;
@@ -51,9 +43,6 @@ interface AuthState {
   login: (payload: LoginPayload) => Promise<void>;
   register: (payload: RegisterPayload) => Promise<UserResponse>;
   logout: () => Promise<void>;
-  /** Replace the cached profile (e.g. after editing name/bio or uploading
-   *  a new profile image). */
-  setProfile: (profile: ProfileResponse) => void;
   clearError: () => void;
 }
 
@@ -68,8 +57,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       return;
     }
     try {
-      const profile = await getMyProfile();
-      set({ user: profile, loading: false });
+      const me = await authApi.getMe();
+      set({ user: me, loading: false });
     } catch {
       // Interceptor already cleared tokens + redirected if refresh failed.
       set({ user: null, loading: false });
@@ -81,8 +70,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const tokens = await authApi.login(payload);
       tokenStorage.set(tokens);
-      const profile = await getMyProfile();
-      set({ user: profile });
+      const me = await authApi.getMe();
+      set({ user: me });
     } catch (err) {
       const msg = extractErrorMessage(err) ?? "Login failed";
       set({ error: msg });
@@ -114,15 +103,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     } finally {
       tokenStorage.clear();
       set({ user: null });
-      // Clear persisted room navigation so the next user doesn't inherit
-      // the previous user's joined rooms / active room.
-      useRoomsStore.getState().resetRooms();
     }
   },
 
   clearError: () => set({ error: null }),
-
-  setProfile: (profile) => set({ user: profile }),
 }));
 
 // Kick off the initial /me hydration immediately (no useEffect needed).

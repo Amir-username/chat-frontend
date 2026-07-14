@@ -6,8 +6,9 @@
 // ---------------------------------------------------------------------------
 
 // API client (axios instance with 401-refresh interceptor)
-export { api, apiGet, apiPost } from "./api/client";
+export { api, apiGet, apiPost, apiPatch } from "./api/client";
 export { tokenStorage } from "./api/tokens";
+export { resolveImageUrl } from "./api/imageUrl";
 
 // Types — re-export everything from the types barrel
 export * from "./types";

@@ -2,7 +2,7 @@
 // Auth API wrappers — one typed function per backend endpoint.
 // ---------------------------------------------------------------------------
 
-import { apiGet, apiPost } from "@/shared/api/client";
+import { apiGet, apiPost } from "./client";
 import type {
   LoginPayload,
   LogoutPayload,
@@ -11,7 +11,7 @@ import type {
   TokenOut,
   UserOut,
   UserResponse,
-} from "@/shared/types";
+} from "@/types";
 
 /** POST /auth/register — custom endpoint that captures `name`. */
 export function register(payload: RegisterPayload): Promise<UserResponse> {

@@ -24,15 +24,12 @@ export interface TokenOut {
 /**
  * Registration request body for the chat-service's custom `/auth/register`
  * endpoint. Differs from fast-auth's built-in `RegisterIn` by including
- * `name` (the display name stored on the extended User model) and an
- * optional `bio`.
+ * `name` (the display name stored on the extended User model).
  */
 export interface RegisterPayload {
   email: string;
   password: string;
   name: string;
-  /** Optional user bio (max 2000 chars). May be null or omitted. */
-  bio?: string | null;
 }
 
 /** JSON login request body for `/auth/login/json`. */
@@ -52,21 +49,6 @@ export interface RefreshPayload {
  *  if present, the backend revokes it too (not just the access token). */
 export interface LogoutPayload {
   refresh_token?: string;
-}
-
-/**
- * PATCH /auth/me/profile request body.
- *
- * Both fields are optional — the backend ignores omitted fields and only
- * updates the ones present. Sending both null/empty raises a 400 "No fields
- * to update" from the backend.
- */
-export interface UpdateProfilePayload {
-  /** New display name (1-255 chars). Omit to leave unchanged. */
-  name?: string;
-  /** New bio (max 2000 chars). Pass null or a string to update; omit to
-   *  leave unchanged. */
-  bio?: string | null;
 }
 
 /**

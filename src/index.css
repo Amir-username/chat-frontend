@@ -126,6 +126,12 @@ textarea:focus {
   .auth-card .field input {
     @apply w-full;
   }
+  .auth-card .field textarea {
+    @apply w-full resize-none;
+  }
+  .auth-card .optional {
+    @apply text-fg-2 font-normal normal-case tracking-normal text-[11px];
+  }
   .auth-card .error {
     @apply bg-red-500/10 text-red-500 border border-red-500/30 rounded-md
            px-3 py-2.5 mb-4 text-[13px];

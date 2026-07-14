@@ -1,6 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuthStore } from "@/features/auth";
-import { LoginPage, RegisterPage } from "@/features/auth";
+import { LoginPage, RegisterPage, ProfilePage } from "@/features/auth";
 import { ChatPage } from "@/features/chat";
 
 /** Full-screen spinner shown while we hydrate the session. */
@@ -36,6 +36,10 @@ export default function App() {
       <Route
         path="/chat/*"
         element={user ? <ChatPage /> : <Navigate to="/login" replace />}
+      />
+      <Route
+        path="/profile"
+        element={user ? <ProfilePage /> : <Navigate to="/login" replace />}
       />
 
       {/* Fallback. */}

@@ -12,9 +12,17 @@
 // Store (Zustand)
 export { useAuthStore } from "./store/authStore";
 
-// API helpers
+// API helpers — auth
 export { register, login, refresh, logout, getMe } from "./api/auth";
+// API helpers — profile
+export {
+  getMyProfile,
+  getUserProfile,
+  updateMyProfile,
+  uploadProfileImage,
+} from "./api/profile";
 
 // Pages
 export { default as LoginPage } from "./pages/LoginPage";
 export { default as RegisterPage } from "./pages/RegisterPage";
+export { default as ProfilePage } from "./pages/ProfilePage";

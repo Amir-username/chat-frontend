@@ -1,6 +1,6 @@
 import { memo, useEffect, useRef } from "react";
-import { isUserMessage, type ChatMessage } from "@/shared/types";
-import { colorForUser, readableTextOn } from "../utils/colors";
+import { isUserMessage, type ChatMessage } from "@/types";
+import { colorForUser, readableTextOn } from "@/utils/colors";
 
 interface MessageListProps {
   messages: ChatMessage[];

@@ -19,7 +19,7 @@ import axios, {
   type AxiosRequestConfig,
   type InternalAxiosRequestConfig,
 } from "axios";
-import type { ApiErrorBody, TokenOut } from "@/shared/types";
+import type { ApiErrorBody, TokenOut } from "@/types";
 import { tokenStorage } from "./tokens";
 
 const baseURL = import.meta.env.VITE_API_BASE_URL || "/api";
@@ -153,14 +153,5 @@ export async function apiPost<T>(
   config?: AxiosRequestConfig,
 ): Promise<T> {
   const r = await api.post<T>(url, body, config);
-  return r.data;
-}
-
-export async function apiPatch<T>(
-  url: string,
-  body?: unknown,
-  config?: AxiosRequestConfig,
-): Promise<T> {
-  const r = await api.patch<T>(url, body, config);
   return r.data;
 }

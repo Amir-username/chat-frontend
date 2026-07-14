@@ -1,5 +1,4 @@
 import { useState, type FormEvent } from "react";
-import { Link } from "react-router-dom";
 
 interface RoomSidebarProps {
   rooms: string[];
@@ -102,11 +101,7 @@ export default function RoomSidebar({
 
       {/* User footer */}
       <div className="px-4 py-3 border-t border-bg-3 flex items-center justify-between gap-2">
-        <Link
-          to="/profile"
-          className="min-w-0 flex-1 flex items-center gap-2.5 rounded-md px-1.5 py-1 hover:bg-bg-2 transition-colors"
-          title="View profile"
-        >
+        <div className="min-w-0 flex-1">
           <div
             className="text-[13px] text-fg-0 whitespace-nowrap overflow-hidden text-ellipsis"
             title={userEmail}
@@ -114,7 +109,7 @@ export default function RoomSidebar({
             {userEmail ?? "—"}
           </div>
           <div className="text-[11px] text-fg-2">online</div>
-        </Link>
+        </div>
         <button
           onClick={onLogout}
           className="btn btn-ghost px-2.5 py-1.5 text-xs"

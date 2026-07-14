@@ -30,6 +30,13 @@ export default defineConfig({
         ws: true,
         changeOrigin: true,
       },
+      // Profile images served by the backend as static files. The backend
+      // returns relative URLs like `/uploads/profile_images/1_abc.jpg`, so
+      // proxying /uploads lets the browser fetch them same-origin in dev.
+      "/uploads": {
+        target: "http://localhost:8000",
+        changeOrigin: true,
+      },
     },
   },
 });
