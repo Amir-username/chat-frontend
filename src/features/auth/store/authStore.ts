@@ -26,6 +26,7 @@
 import { create } from "zustand";
 import * as authApi from "../api/auth";
 import { getMyProfile } from "../api/profile";
+import { clearUserProfileCache } from "../hooks/useUserProfile";
 import { tokenStorage } from "@/shared/api/tokens";
 import { useRoomsStore } from "@/features/chat/store/roomsStore";
 import type {
@@ -117,6 +118,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       // Clear persisted room navigation so the next user doesn't inherit
       // the previous user's joined rooms / active room.
       useRoomsStore.getState().resetRooms();
+      // Clear the cached public-profile lookup so the next user doesn't see
+      // the previous user's fetched profile images / bios in chat.
+      clearUserProfileCache();
     }
   },
 

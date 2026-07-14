@@ -22,7 +22,14 @@ export {
   uploadProfileImage,
 } from "./api/profile";
 
+// Hooks
+export { useUserProfile, clearUserProfileCache } from "./hooks/useUserProfile";
+
+// Components
+export { default as Avatar } from "./components/Avatar";
+
 // Pages
 export { default as LoginPage } from "./pages/LoginPage";
 export { default as RegisterPage } from "./pages/RegisterPage";
 export { default as ProfilePage } from "./pages/ProfilePage";
+export { default as UserProfilePage } from "./pages/UserProfilePage";

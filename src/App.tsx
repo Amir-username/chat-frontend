@@ -1,6 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuthStore } from "@/features/auth";
-import { LoginPage, RegisterPage, ProfilePage } from "@/features/auth";
+import { LoginPage, RegisterPage, ProfilePage, UserProfilePage } from "@/features/auth";
 import { ChatPage } from "@/features/chat";
 
 /** Full-screen spinner shown while we hydrate the session. */
@@ -40,6 +40,11 @@ export default function App() {
       <Route
         path="/profile"
         element={user ? <ProfilePage /> : <Navigate to="/login" replace />}
+      />
+      {/* Public profile of any user (by ID). */}
+      <Route
+        path="/users/:userId"
+        element={user ? <UserProfilePage /> : <Navigate to="/login" replace />}
       />
 
       {/* Fallback. */}

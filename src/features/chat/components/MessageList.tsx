@@ -1,6 +1,7 @@
 import { memo, useEffect, useRef } from "react";
-import { isUserMessage, type ChatMessage } from "@/shared/types";
+import { isUserMessage, type ChatMessage, type UserId } from "@/shared/types";
 import { colorForUser, readableTextOn } from "../utils/colors";
+import { useUserProfile, Avatar } from "@/features/auth";
 
 interface MessageListProps {
   messages: ChatMessage[];
@@ -16,11 +17,6 @@ function formatTime(iso: string): string {
   } catch {
     return "";
   }
-}
-
-/** First letter of a name, uppercased, for the avatar bubble. */
-function initial(name: string): string {
-  return (name?.trim()?.[0] ?? "?").toUpperCase();
 }
 
 interface RenderedMessage {
@@ -81,6 +77,46 @@ function toRendered(
   return out;
 }
 
+/**
+ * Avatar for a single chat message. Calls `useUserProfile` to fetch the
+ * sender's profile image (cached at module level so each user is fetched
+ * only once across the whole app). Extracted as its own component because
+ * hooks can't be called inside a `.map()` callback.
+ *
+ * - Other users: renders the profile image (or colored initial fallback)
+ *   wrapped in a <Link> to their public profile /users/:id.
+ * - Own messages: renders the profile image / initial WITHOUT a link —
+ *   tapping your own avatar would be noisy (every message is yours).
+ */
+function MessageAvatar({
+  userId,
+  name,
+  isOwn,
+  visible,
+}: {
+  userId: UserId;
+  name: string;
+  isOwn: boolean;
+  visible: boolean;
+}) {
+  const { profile } = useUserProfile(userId);
+  const imageUrl = profile?.profile_image ?? null;
+
+  return (
+    <div className={visible ? "visible" : "invisible"}>
+      <Avatar
+        userId={userId}
+        name={name}
+        imageUrl={imageUrl}
+        size={36}
+        // Only link to the public profile for OTHER users.
+        href={isOwn ? undefined : `/users/${userId}`}
+        interactive={!isOwn}
+      />
+    </div>
+  );
+}
+
 function MessageList({ messages, currentUserId }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const rendered = toRendered(messages, currentUserId);
@@ -128,17 +164,17 @@ function MessageList({ messages, currentUserId }: MessageListProps) {
               (isOwn ? "flex-row-reverse" : "flex-row")
             }
           >
-            {/* Avatar — every user gets their own color */}
-            <div
-              className={
-                "w-9 h-9 rounded-full flex items-center justify-center " +
-                "font-semibold text-sm flex-shrink-0 " +
-                (row.showHeader ? "visible" : "invisible")
-              }
-              style={{ background: color, color: onColor }}
-            >
-              {initial(row.name ?? "?")}
-            </div>
+            {/* Avatar — fetches the sender's profile image.
+                Visibility is toggled so consecutive messages from the same
+                user collapse the avatar (but keep the slot for alignment). */}
+            {row.userId != null && (
+              <MessageAvatar
+                userId={row.userId}
+                name={row.name ?? "?"}
+                isOwn={isOwn}
+                visible={row.showHeader}
+              />
+            )}
 
             {/* Bubble + meta */}
             <div

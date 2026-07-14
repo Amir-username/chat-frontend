@@ -47,8 +47,8 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex justify-center bg-bg-0">
-      <div className="auth-card my-8">
+    <div className="flex justify-center items-center md:items-start h-screen bg-bg-0">
+      <div className="auth-card my-8 mx-4">
         <h1>Create your account</h1>
         <p className="subtitle">It only takes a few seconds</p>
 
