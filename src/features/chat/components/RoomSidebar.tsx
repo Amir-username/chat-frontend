@@ -77,6 +77,15 @@ export default function RoomSidebar({
             );
           })}
         </ul>
+
+        {/* Direct Messages link — navigates to the 1-on-1 chat view. */}
+        <Link
+          to="/private-chat"
+          className="mt-4 mx-0 block px-3 py-2 rounded-md text-fg-1 font-normal hover:bg-bg-2 transition-colors"
+        >
+          <span className="text-fg-2 mr-1.5">@</span>
+          Direct Messages
+        </Link>
       </div>
 
       {/* Join a new room — pinned above the user footer, never scrolls. */}

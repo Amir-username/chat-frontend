@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuthStore } from "@/features/auth";
+import { useAuthStore } from "@/store/authStore";
 
 export default function RegisterPage() {
   const register = useAuthStore((s) => s.register);
@@ -10,7 +10,6 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [bio, setBio] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -31,12 +30,7 @@ export default function RegisterPage() {
 
     setSubmitting(true);
     try {
-      // bio is optional — only include it if the user typed something,
-      // so we don't send an empty string that would override the default null.
-      const payload = bio.trim()
-        ? { name, email, password, bio: bio.trim() }
-        : { name, email, password };
-      const user = await register(payload);
+      const user = await register({ name, email, password });
       setSuccess(`Account created for ${user.email}. Redirecting to login…`);
       setTimeout(() => navigate("/login"), 1200);
     } catch (err) {
@@ -47,8 +41,8 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex justify-center bg-bg-0">
-      <div className="auth-card my-8">
+    <div className="h-screen flex items-center justify-center p-4 bg-bg-0">
+      <div className="auth-card">
         <h1>Create your account</h1>
         <p className="subtitle">It only takes a few seconds</p>
 
@@ -112,21 +106,6 @@ export default function RegisterPage() {
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               placeholder="Repeat your password"
-              disabled={submitting}
-            />
-          </div>
-
-          <div className="field">
-            <label htmlFor="bio">
-              Bio <span className="optional">(optional)</span>
-            </label>
-            <textarea
-              id="bio"
-              rows={3}
-              maxLength={2000}
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              placeholder="Tell people a little about yourself…"
               disabled={submitting}
             />
           </div>

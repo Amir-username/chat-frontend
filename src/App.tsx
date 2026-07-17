@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuthStore } from "@/features/auth";
 import { LoginPage, RegisterPage, ProfilePage, UserProfilePage } from "@/features/auth";
 import { ChatPage } from "@/features/chat";
+import { PrivateChatPage } from "@/features/private-chat";
 
 /** Full-screen spinner shown while we hydrate the session. */
 function FullScreenLoader() {
@@ -45,6 +46,11 @@ export default function App() {
       <Route
         path="/users/:userId"
         element={user ? <UserProfilePage /> : <Navigate to="/login" replace />}
+      />
+      {/* Private (1-on-1) direct messages. Active chat is via ?chat=<id>. */}
+      <Route
+        path="/private-chat"
+        element={user ? <PrivateChatPage /> : <Navigate to="/login" replace />}
       />
 
       {/* Fallback. */}

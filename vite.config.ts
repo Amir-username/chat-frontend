@@ -30,6 +30,13 @@ export default defineConfig({
         ws: true,
         changeOrigin: true,
       },
+      // Private-chat WebSocket lives at /private/ws/chat/{chat_id} on the
+      // backend. Proxied separately because it's not under /ws.
+      "/private/ws": {
+        target: "ws://localhost:8000",
+        ws: true,
+        changeOrigin: true,
+      },
       // Profile images served by the backend as static files. The backend
       // returns relative URLs like `/uploads/profile_images/1_abc.jpg`, so
       // proxying /uploads lets the browser fetch them same-origin in dev.

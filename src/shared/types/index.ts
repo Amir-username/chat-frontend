@@ -15,3 +15,4 @@ export * from "./api";
 export * from "./user";
 export * from "./auth";
 export * from "./chat";
+export * from "./privateChat";
