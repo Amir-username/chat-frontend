@@ -10,5 +10,8 @@ export { api, apiGet, apiPost, apiPatch } from "./api/client";
 export { tokenStorage } from "./api/tokens";
 export { resolveImageUrl } from "./api/imageUrl";
 
+// Hooks
+export { useDebouncedValue } from "./hooks/useDebouncedValue";
+
 // Types — re-export everything from the types barrel
 export * from "./types";

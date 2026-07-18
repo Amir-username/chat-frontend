@@ -181,7 +181,6 @@ export default function PrivateChatPage() {
           <PrivateChatList
             activeChatId={activeChatId}
             onSelect={(id) => setActiveChatId(id)}
-            onNewChat={() => navigate("/chat")}
             showBackButton={isMobile}
             onBack={() => navigate("/chat")}
           />

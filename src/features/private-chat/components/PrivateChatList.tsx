@@ -9,18 +9,16 @@
 // ---------------------------------------------------------------------------
 
 import { useEffect, useState } from "react";
-import type { PrivateChatListItem } from "@/shared/types";
-import { listPrivateChats } from "../api/privateChat";
-import { Avatar } from "@/features/auth";
+import type { PrivateChatListItem, ProfileResponse } from "@/shared/types";
+import { listPrivateChats, startPrivateChat } from "../api/privateChat";
+import { Avatar, UserSearchOverlay } from "@/features/auth";
 
 interface PrivateChatListProps {
   /** ID of the currently-open chat (for highlight). Null if none selected. */
   activeChatId: number | null;
-  /** Called when the user picks a chat from the list. */
+  /** Called when the user picks a chat from the list OR when a new chat is
+   *  started via the search overlay. */
   onSelect: (chatId: number) => void;
-  /** Called when the user wants to start a new chat (navigates to user list
-   *  or a search UI). Optional — hidden if not provided. */
-  onNewChat?: () => void;
   /** When true, shows a back button instead of the "new chat" button.
    *  Used on mobile to navigate back to the rooms sidebar. */
   showBackButton?: boolean;
@@ -57,12 +55,16 @@ function formatRelative(iso: string | null): string {
 export default function PrivateChatList({
   activeChatId,
   onSelect,
-  onNewChat,
   showBackButton = false,
   onBack,
 }: PrivateChatListProps) {
   const [chats, setChats] = useState<PrivateChatListItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Search overlay state — opened by the "New" button.
+  const [searchOpen, setSearchOpen] = useState(false);
+  // Tracks whether we're starting a new chat (so we can disable the overlay
+  // list while the POST /private/chats request is in flight).
+  const [startingChatFor, setStartingChatFor] = useState<number | null>(null);
 
   // Load the chat list on mount. Re-fetch when the component remounts
   // (e.g. when navigating back to the list view on mobile).
@@ -90,6 +92,40 @@ export default function PrivateChatList({
     };
   }, []);
 
+  // Refresh the list whenever a chat is selected (a new chat was just created
+  // — we want it to appear in the sidebar).
+  useEffect(() => {
+    if (activeChatId == null) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await listPrivateChats();
+        if (!cancelled) setChats(data);
+      } catch {
+        // Silent — the list will refresh on next mount.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeChatId]);
+
+  /** Called when the user picks a result from the search overlay. Starts a
+   *  new private chat (or fetches the existing one) and opens it. */
+  async function handleSearchSelectUser(user: ProfileResponse) {
+    setStartingChatFor(Number(user.id));
+    try {
+      const chat = await startPrivateChat({ user_id: Number(user.id) });
+      onSelect(chat.id);
+    } catch (err) {
+      const msg =
+        err instanceof Error ? err.message : "Failed to start chat";
+      setError(msg);
+    } finally {
+      setStartingChatFor(null);
+    }
+  }
+
   return (
     <aside className="w-full h-full bg-bg-1 border-r border-bg-3 flex flex-col">
       {/* Header */}
@@ -106,15 +142,14 @@ export default function PrivateChatList({
           )}
           <h2 className="font-semibold text-[15px]">Direct Messages</h2>
         </div>
-        {onNewChat && !showBackButton && (
-          <button
-            onClick={onNewChat}
-            className="btn btn-ghost px-2 py-1 text-sm"
-            title="Start a new chat"
-          >
-            + New
-          </button>
-        )}
+        <button
+          onClick={() => setSearchOpen(true)}
+          disabled={startingChatFor !== null}
+          className="btn btn-ghost px-2 py-1 text-sm"
+          title="Start a new chat"
+        >
+          + New
+        </button>
       </div>
 
       {/* List */}
@@ -180,6 +215,15 @@ export default function PrivateChatList({
             );
           })}
       </div>
+
+      {/* User-search overlay — selecting a result starts a new private chat. */}
+      <UserSearchOverlay
+        open={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        onSelectUser={handleSearchSelectUser}
+        title="Start a new chat"
+        placeholder="Search users by name to chat with…"
+      />
     </aside>
   );
 }

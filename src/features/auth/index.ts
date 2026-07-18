@@ -20,13 +20,17 @@ export {
   getUserProfile,
   updateMyProfile,
   uploadProfileImage,
+  searchUsers,
 } from "./api/profile";
 
 // Hooks
 export { useUserProfile, clearUserProfileCache } from "./hooks/useUserProfile";
+export { useUserSearch } from "./hooks/useUserSearch";
+export type { SearchStatus } from "./hooks/useUserSearch";
 
 // Components
 export { default as Avatar } from "./components/Avatar";
+export { default as UserSearchOverlay } from "./components/UserSearchOverlay";
 
 // Pages
 export { default as LoginPage } from "./pages/LoginPage";

@@ -1,16 +1,40 @@
 // ---------------------------------------------------------------------------
 // Profile API wrappers — endpoints under /auth/* for viewing and editing
-// user profiles (name, bio, profile image).
+// user profiles (name, bio, profile image) and searching users by name.
 //
 // Backend source: app/profile_routes.py
 // ---------------------------------------------------------------------------
 
+import type { AxiosRequestConfig } from "axios";
 import { api, apiPatch, apiGet } from "@/shared/api/client";
 import type {
   ProfileResponse,
   UpdateProfilePayload,
   UserId,
 } from "@/shared/types";
+
+/**
+ * GET /auth/search?q=<query>&limit=<n> — case-insensitive partial match on
+ * user name. Returns matching users' full public profiles.
+ *
+ * Pass an `AbortSignal` via the second argument so the caller can cancel
+ * in-flight requests when a newer keystroke arrives (see `useUserSearch`).
+ *
+ * Backend validates: `q` 1–100 chars, `limit` 1–100 (default 20).
+ */
+export function searchUsers(
+  query: string,
+  opts: {
+    limit?: number;
+    signal?: AbortSignal;
+  } = {},
+): Promise<ProfileResponse[]> {
+  const params = new URLSearchParams({ q: query });
+  if (opts.limit != null) params.set("limit", String(opts.limit));
+  const config: AxiosRequestConfig = {};
+  if (opts.signal) config.signal = opts.signal;
+  return apiGet<ProfileResponse[]>(`/auth/search?${params.toString()}`, config);
+}
 
 /** GET /auth/me/profile — the authenticated user's full profile. */
 export function getMyProfile(): Promise<ProfileResponse> {

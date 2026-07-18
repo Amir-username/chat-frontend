@@ -3,12 +3,12 @@ import { useNavigate } from "react-router-dom";
 import RoomSidebar from "../components/RoomSidebar";
 import MessageList from "../components/MessageList";
 import MessageInput from "../components/MessageInput";
-import { useAuthStore } from "@/features/auth";
+import { useAuthStore, UserSearchOverlay } from "@/features/auth";
 import { useChatSocket, type ConnectionStatus } from "../hooks/useChatSocket";
 import { useResizable } from "../hooks/useResizable";
 import { useMediaQuery } from "../hooks/useMediaQuery";
 import { useRoomsStore, useActiveRoom } from "../store/roomsStore";
-import type { ChatMessage } from "@/shared/types";
+import type { ChatMessage, ProfileResponse } from "@/shared/types";
 
 const STATUS_LABEL: Record<ConnectionStatus, string> = {
   idle: "idle",
@@ -46,6 +46,8 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   // Mobile-only: is the sidebar drawer currently open?
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // User-search overlay (opened from the header search icon).
+  const [searchOpen, setSearchOpen] = useState(false);
 
   // Draggable sidebar width — persisted to localStorage so it survives reloads.
   // Only used on desktop; on mobile the drawer is a fixed 85% of viewport.
@@ -115,6 +117,10 @@ export default function ChatPage() {
   async function handleLogout() {
     await logout();
     navigate("/login", { replace: true });
+  }
+
+  function handleSearchSelectUser(user: ProfileResponse) {
+    navigate(`/users/${user.id}`);
   }
 
   const headerStatus = useMemo(
@@ -220,7 +226,28 @@ export default function ChatPage() {
               {activeRoom ?? "—"}
             </span>
           </div>
-          {headerStatus}
+          <div className="flex items-center gap-2">
+            {headerStatus}
+            {/* Search users — opens an overlay. The same overlay is used in
+                the private-chats view; selecting a result here navigates to
+                the user's public profile. */}
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="btn btn-ghost px-2 py-1.5"
+              aria-label="Search users"
+              title="Search users"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
+                <path
+                  d="M21 21l-4.3-4.3"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+          </div>
         </header>
 
         <MessageList messages={messages} currentUserId={user?.id} />
@@ -231,6 +258,13 @@ export default function ChatPage() {
           disconnected={disconnected && status !== "connecting"}
         />
       </main>
+
+      {/* User search overlay — opened from the header search icon. */}
+      <UserSearchOverlay
+        open={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        onSelectUser={handleSearchSelectUser}
+      />
     </div>
   );
 }
