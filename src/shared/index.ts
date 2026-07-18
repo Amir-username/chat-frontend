@@ -13,5 +13,8 @@ export { resolveImageUrl } from "./api/imageUrl";
 // Hooks
 export { useDebouncedValue } from "./hooks/useDebouncedValue";
 
+// Components
+export { default as SearchIcon } from "./components/icons/SearchIcon";
+
 // Types — re-export everything from the types barrel
 export * from "./types";

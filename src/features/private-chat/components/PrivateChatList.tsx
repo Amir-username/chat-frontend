@@ -12,7 +12,7 @@ import { useEffect, useState } from "react";
 import type { PrivateChatListItem, ProfileResponse } from "@/shared/types";
 import { listPrivateChats, startPrivateChat } from "../api/privateChat";
 import { Avatar, UserSearchOverlay } from "@/features/auth";
-import SearchIcon from "@/components/icons/SearchIcon";
+import SearchIcon from "@/shared/components/icons/SearchIcon";
 
 interface PrivateChatListProps {
   /** ID of the currently-open chat (for highlight). Null if none selected. */
