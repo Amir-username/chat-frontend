@@ -28,13 +28,13 @@ import * as authApi from "../api/auth";
 import { getMyProfile } from "../api/profile";
 import { clearUserProfileCache } from "../hooks/useUserProfile";
 import { tokenStorage } from "@/shared/api/tokens";
-import { useRoomsStore } from "@/features/chat/store/roomsStore";
 import type {
   LoginPayload,
   ProfileResponse,
   RegisterPayload,
   UserResponse,
 } from "@/shared/types";
+import { useRoomsStore } from "@/store/roomsStore";
 
 interface AuthState {
   /** Cached current-user profile. We hydrate from /auth/me/profile (not

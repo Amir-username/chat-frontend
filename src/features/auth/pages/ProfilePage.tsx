@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/features/auth";
 import { updateMyProfile, uploadProfileImage } from "@/features/auth";
 import { resolveImageUrl } from "@/shared";
-import { colorForUser, readableTextOn } from "@/features/chat/utils/colors";
+import { colorForUser, readableTextOn } from "@/utils/colors";
 
 export default function ProfilePage() {
   const navigate = useNavigate();

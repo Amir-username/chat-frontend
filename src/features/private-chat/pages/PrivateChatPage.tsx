@@ -18,7 +18,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import PrivateChatList from "../components/PrivateChatList";
 import PrivateMessageList from "../components/PrivateMessageList";
-import MessageInput from "@/features/chat/components/MessageInput";
 import { usePrivateChatSocket, type PrivateConnectionStatus } from "../hooks/usePrivateChatSocket";
 import { getPrivateChat } from "../api/privateChat";
 import { useAuthStore, Avatar } from "@/features/auth";
@@ -26,6 +25,7 @@ import type {
   PrivateChatWithMessages,
   PrivateChatWsMessage,
 } from "@/shared/types";
+import MessageInput from "@/shared/components/MessageInput";
 
 const STATUS_LABEL: Record<PrivateConnectionStatus, string> = {
   idle: "idle",
@@ -177,7 +177,7 @@ export default function PrivateChatPage() {
     <div className="flex h-screen overflow-hidden">
       {/* ----- Left: conversation list ----- */}
       {(!isMobile || showListOnly) && (
-        <div className={isMobile ? "w-full" : "w-80 flex-shrink-0"}>
+        <div className={isMobile ? "w-full" : "w-80 shrink-0"}>
           <PrivateChatList
             activeChatId={activeChatId}
             onSelect={(id) => setActiveChatId(id)}
@@ -207,7 +207,7 @@ export default function PrivateChatPage() {
               {/* Topbar — Telegram-style: avatar + name (clickable → profile)
                   + connection status. On mobile, a back button sits on the
                   left to return to the conversation list. */}
-              <header className="h-14 flex-shrink-0 border-b border-bg-3 flex items-center gap-3 px-3 bg-bg-1">
+              <header className="h-14 shrink-0 border-b border-bg-3 flex items-center gap-3 px-3 bg-bg-1">
                 {isMobile && (
                   <button
                     onClick={() => setActiveChatId(null)}
