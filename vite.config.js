@@ -17,7 +17,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       // All REST calls go through /api/* — the axios client uses baseURL "/api"
-      "/api": {
+      "/": {
         target: "https://chat-service.fastapicloud.dev/",
         changeOrigin: true,
         rewrite: (p) => p.replace(/^\/api/, ""),
