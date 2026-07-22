@@ -39,11 +39,30 @@ export interface PrivateChatListItem {
 }
 
 /**
+ * Snippet of the message being replied to (Telegram-style).
+ *
+ * Embedded inside `PrivateMessage.reply_to` when the sender was replying
+ * to an earlier message. Mirrors the backend's `ReplyPreview` Pydantic
+ * model. Always present on `PrivateMessage.reply_to` (never null) — the
+ * field itself is null when there's no reply.
+ */
+export interface ReplyPreview {
+  id: number;
+  sender_id: number;
+  sender_name: string;
+  content: string;
+  created_at: string; // ISO-8601
+}
+
+/**
  * A single message in a private chat. Used both in REST responses
  * (GET /private/chats/{id}) and in WebSocket frames.
  *
  * `sender_id` lets the UI decide left vs. right alignment: messages from
  * the current user go right, from the other user go left.
+ *
+ * `reply_to` is null for plain messages, or a `ReplyPreview` of the
+ * quoted message when the sender was replying to something.
  */
 export interface PrivateMessage {
   id: number;
@@ -51,6 +70,8 @@ export interface PrivateMessage {
   sender_id: UserId;
   sender_name: string;
   content: string;
+  /** The message this one is replying to, or null. */
+  reply_to: ReplyPreview | null;
   created_at: string; // ISO-8601
 }
 
@@ -74,6 +95,9 @@ export interface StartPrivateChatPayload {
 /** POST /private/chats/{chat_id}/messages request body. */
 export interface SendPrivateMessagePayload {
   content: string;
+  /** Optional ID of the message to reply to. The backend validates that
+   *  the referenced message exists in the same chat. */
+  reply_to_id?: number | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -94,9 +118,11 @@ export type PrivateChatWsMessage =
   | { type: "system"; content: string; chat_id: number }
   | { type: "history"; messages: PrivateMessage[] };
 
-/** Outgoing payload — only `content` is read by the server. */
+/** Outgoing payload — `content` is required; `reply_to_id` is optional
+ *  and only sent when replying to a specific message. */
 export interface PrivateOutgoingMessage {
   content: string;
+  reply_to_id?: number | null;
 }
 
 /** Type guard: narrow a WsMessage to its `message` variant. */

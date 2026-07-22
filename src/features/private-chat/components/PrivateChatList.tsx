@@ -12,7 +12,6 @@ import { useEffect, useState } from "react";
 import type { PrivateChatListItem, ProfileResponse } from "@/shared/types";
 import { listPrivateChats, startPrivateChat } from "../api/privateChat";
 import { Avatar, UserSearchOverlay } from "@/features/auth";
-import SearchIcon from "@/shared/components/icons/SearchIcon";
 
 interface PrivateChatListProps {
   /** ID of the currently-open chat (for highlight). Null if none selected. */
@@ -81,7 +80,9 @@ export default function PrivateChatList({
       } catch (err) {
         if (!cancelled) {
           const msg =
-            err instanceof Error ? err.message : "Failed to load conversations";
+            err instanceof Error
+              ? err.message
+              : "Failed to load conversations";
           setError(msg);
         }
       }
@@ -117,7 +118,8 @@ export default function PrivateChatList({
       const chat = await startPrivateChat({ user_id: Number(user.id) });
       onSelect(chat.id);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Failed to start chat";
+      const msg =
+        err instanceof Error ? err.message : "Failed to start chat";
       setError(msg);
     } finally {
       setStartingChatFor(null);
@@ -146,13 +148,15 @@ export default function PrivateChatList({
           className="btn btn-ghost px-2 py-1 text-sm"
           title="Start a new chat"
         >
-          <SearchIcon />
+          + New
         </button>
       </div>
 
       {/* List */}
       <div className="flex-1 overflow-y-auto">
-        {error && <div className="px-4 py-3 text-sm text-red-500">{error}</div>}
+        {error && (
+          <div className="px-4 py-3 text-sm text-red-500">{error}</div>
+        )}
         {chats === null && !error && (
           <div className="px-4 py-6 text-sm text-fg-2 text-center">
             Loading…
@@ -175,7 +179,9 @@ export default function PrivateChatList({
                 className={
                   "w-full text-left px-3 py-3 flex items-center gap-3 " +
                   "border-none cursor-pointer transition-colors " +
-                  (active ? "bg-indigo-500/15" : "hover:bg-bg-2")
+                  (active
+                    ? "bg-indigo-500/15"
+                    : "hover:bg-bg-2")
                 }
               >
                 <Avatar

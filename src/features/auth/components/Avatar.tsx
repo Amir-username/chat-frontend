@@ -11,9 +11,9 @@
 // ---------------------------------------------------------------------------
 
 import { Link } from "react-router-dom";
+import { colorForUser, readableTextOn } from "@/features/chat/utils/colors";
 import { resolveImageUrl } from "@/shared";
 import type { UserId } from "@/shared/types";
-import { colorForUser, readableTextOn } from "@/utils/colors";
 
 interface AvatarProps {
   /** The user's ID — used for stable color hashing and image lookup. */
@@ -60,7 +60,7 @@ export default function Avatar({
   ) : (
     <div
       className={
-        "rounded-full flex items-center justify-center font-semibold " +
+        "rounded-full flex items-center justify-center font-semibold flex-shrink-0 " +
         (interactive ? "transition-opacity hover:opacity-85 " : "") +
         className
       }
@@ -76,9 +76,7 @@ export default function Avatar({
         to={href}
         className={
           "inline-block rounded-full " +
-          (interactive
-            ? "focus:outline-none focus:ring-2 focus:ring-accent/50 "
-            : "") +
+          (interactive ? "focus:outline-none focus:ring-2 focus:ring-accent/50 " : "") +
           className
         }
         style={dimension}

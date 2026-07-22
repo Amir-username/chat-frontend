@@ -42,7 +42,9 @@ interface UsePrivateChatSocketOptions {
 
 interface UsePrivateChatSocketResult {
   status: PrivateConnectionStatus;
-  send: (content: string) => void;
+  /** Send a message. Optional `replyToId` quotes an earlier message —
+   *  the backend validates it belongs to the same chat. */
+  send: (content: string, replyToId?: number | null) => void;
   reconnect: () => void;
 }
 
@@ -143,12 +145,21 @@ export function usePrivateChatSocket({
     return cleanup;
   }, [connect, cleanup]);
 
-  const send = useCallback((content: string) => {
-    const ws = wsRef.current;
-    if (!ws || ws.readyState !== WebSocket.OPEN) return;
-    const payload: PrivateOutgoingMessage = { content };
-    ws.send(JSON.stringify(payload));
-  }, []);
+  const send = useCallback(
+    (content: string, replyToId?: number | null) => {
+      const ws = wsRef.current;
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+      // Only include `reply_to_id` when it's a real number — omitting it
+      // entirely is cleaner than sending `null` (and matches the backend's
+      // optional-field semantics).
+      const payload: PrivateOutgoingMessage =
+        replyToId != null
+          ? { content, reply_to_id: replyToId }
+          : { content };
+      ws.send(JSON.stringify(payload));
+    },
+    [],
+  );
 
   const reconnect = useCallback(() => {
     backoffRef.current = 1000;

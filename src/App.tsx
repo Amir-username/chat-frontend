@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuthStore } from "@/features/auth";
 import { LoginPage, RegisterPage, ProfilePage, UserProfilePage } from "@/features/auth";
+import { ChatPage } from "@/features/chat";
 import { PrivateChatPage } from "@/features/private-chat";
 
 /** Full-screen spinner shown while we hydrate the session. */
@@ -25,18 +26,18 @@ export default function App() {
       {/* Public routes — redirect to /chat if already logged in. */}
       <Route
         path="/login"
-        element={user ? <Navigate to="/private-chat" replace /> : <LoginPage />}
+        element={user ? <Navigate to="/chat" replace /> : <LoginPage />}
       />
       <Route
         path="/register"
-        element={user ? <Navigate to="/private-chat" replace /> : <RegisterPage />}
+        element={user ? <Navigate to="/chat" replace /> : <RegisterPage />}
       />
 
       {/* Protected routes — redirect to /login if not authenticated. */}
-      {/* <Route
+      <Route
         path="/chat/*"
         element={user ? <ChatPage /> : <Navigate to="/login" replace />}
-      /> */}
+      />
       <Route
         path="/profile"
         element={user ? <ProfilePage /> : <Navigate to="/login" replace />}
@@ -53,7 +54,7 @@ export default function App() {
       />
 
       {/* Fallback. */}
-      <Route path="*" element={<Navigate to={user ? "/private-chat" : "/login"} replace />} />
+      <Route path="*" element={<Navigate to={user ? "/chat" : "/login"} replace />} />
     </Routes>
   );
 }

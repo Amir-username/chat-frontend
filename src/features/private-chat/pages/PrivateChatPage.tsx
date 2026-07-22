@@ -18,14 +18,15 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import PrivateChatList from "../components/PrivateChatList";
 import PrivateMessageList from "../components/PrivateMessageList";
+import MessageInput, { type ReplyTarget } from "@/features/chat/components/MessageInput";
 import { usePrivateChatSocket, type PrivateConnectionStatus } from "../hooks/usePrivateChatSocket";
 import { getPrivateChat } from "../api/privateChat";
 import { useAuthStore, Avatar } from "@/features/auth";
 import type {
   PrivateChatWithMessages,
   PrivateChatWsMessage,
+  PrivateMessage,
 } from "@/shared/types";
-import MessageInput from "@/shared/components/MessageInput";
 
 const STATUS_LABEL: Record<PrivateConnectionStatus, string> = {
   idle: "idle",
@@ -78,8 +79,16 @@ export default function PrivateChatPage() {
   // WebSocket. Cleared whenever the active chat changes.
   const [messages, setMessages] = useState<PrivateChatWsMessage[]>([]);
 
+  // Reply target — when set, the input bar shows a preview of the quoted
+  // message and the next send includes `reply_to_id`. Cleared on send,
+  // on cancel, and when switching chats.
+  const [replyTo, setReplyTo] = useState<ReplyTarget | null>(null);
+
   // ----- REST: load the active chat's details + initial messages -----
   useEffect(() => {
+    // Clear any in-progress reply whenever the active chat changes —
+    // replying across chats doesn't make sense.
+    setReplyTo(null);
     if (activeChatId == null) {
       setActiveChat(null);
       setMessages([]);
@@ -139,6 +148,26 @@ export default function PrivateChatPage() {
     onMessage,
   });
 
+  // Wrap `send` so we can attach the in-progress reply's id (if any) and
+  // clear the reply target after the message goes out.
+  const handleSend = useCallback(
+    (content: string) => {
+      send(content, replyTo?.id);
+      setReplyTo(null);
+    },
+    [send, replyTo],
+  );
+
+  // Called when the user clicks the reply affordance on a message bubble.
+  // Converts the message into a ReplyTarget for the input bar.
+  const handleReply = useCallback((msg: PrivateMessage) => {
+    setReplyTo({
+      id: msg.id,
+      senderName: msg.sender_name,
+      contentPreview: msg.content.split("\n")[0] ?? "",
+    });
+  }, []);
+
   // ----- Mobile: whether to show the list or the active chat -----
   // On wide screens we show both panes; on narrow screens we toggle.
   const [isMobile, setIsMobile] = useState(
@@ -177,7 +206,7 @@ export default function PrivateChatPage() {
     <div className="flex h-screen overflow-hidden">
       {/* ----- Left: conversation list ----- */}
       {(!isMobile || showListOnly) && (
-        <div className={isMobile ? "w-full" : "w-80 shrink-0"}>
+        <div className={isMobile ? "w-full" : "w-80 flex-shrink-0"}>
           <PrivateChatList
             activeChatId={activeChatId}
             onSelect={(id) => setActiveChatId(id)}
@@ -207,7 +236,7 @@ export default function PrivateChatPage() {
               {/* Topbar — Telegram-style: avatar + name (clickable → profile)
                   + connection status. On mobile, a back button sits on the
                   left to return to the conversation list. */}
-              <header className="h-14 shrink-0 border-b border-bg-3 flex items-center gap-3 px-3 bg-bg-1">
+              <header className="h-14 flex-shrink-0 border-b border-bg-3 flex items-center gap-3 px-3 bg-bg-1">
                 {isMobile && (
                   <button
                     onClick={() => setActiveChatId(null)}
@@ -245,12 +274,15 @@ export default function PrivateChatPage() {
                 otherUserId={otherUserId ?? 0}
                 otherUserName={otherUserName}
                 otherUserImage={otherUserImage}
+                onReply={handleReply}
               />
 
               <MessageInput
-                onSend={send}
+                onSend={handleSend}
                 disabled={status !== "open"}
                 disconnected={disconnected && status !== "connecting"}
+                replyTarget={replyTo}
+                onCancelReply={() => setReplyTo(null)}
               />
             </>
           )}
