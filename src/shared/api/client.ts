@@ -22,7 +22,7 @@ import axios, {
 import type { ApiErrorBody, TokenOut } from "@/shared/types";
 import { tokenStorage } from "./tokens";
 
-const baseURL = import.meta.env.VITE_API_BASE_URL || "/";
+const baseURL = "https://chat-service.fastapicloud.dev/";
 
 export const api: AxiosInstance = axios.create({
   baseURL,
