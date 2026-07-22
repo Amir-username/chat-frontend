@@ -22,7 +22,7 @@ import axios, {
 import type { ApiErrorBody, TokenOut } from "@/shared/types";
 import { tokenStorage } from "./tokens";
 
-const baseURL = import.meta.env.VITE_API_BASE_URL || "/api";
+const baseURL = import.meta.env.VITE_API_BASE_URL || "/";
 
 export const api: AxiosInstance = axios.create({
   baseURL,
@@ -133,7 +133,10 @@ api.interceptors.response.use(
 
 function redirectToLogin(): void {
   // Avoid redirect loops if we're already on /login.
-  if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
+  if (
+    typeof window !== "undefined" &&
+    !window.location.pathname.startsWith("/login")
+  ) {
     window.location.replace("/login");
   }
 }
@@ -142,7 +145,10 @@ function redirectToLogin(): void {
 // Convenience wrapper for typed requests.
 // ---------------------------------------------------------------------------
 
-export async function apiGet<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
+export async function apiGet<T>(
+  url: string,
+  config?: AxiosRequestConfig,
+): Promise<T> {
   const r = await api.get<T>(url, config);
   return r.data;
 }
