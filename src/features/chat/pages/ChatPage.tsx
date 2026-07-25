@@ -197,7 +197,7 @@ export default function ChatPage() {
         {/* Room header */}
         <header
           className={
-            "h-14 flex-shrink-0 border-b border-bg-3 flex items-center " +
+            "h-14 shrink-0 border-b border-bg-3 flex items-center " +
             "justify-between gap-3 bg-bg-1 " +
             (isMobile ? "px-3" : "px-5")
           }

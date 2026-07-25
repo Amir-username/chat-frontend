@@ -7,7 +7,7 @@
 // VITE_API_BASE_URL set, we need to prepend that base URL.
 // ---------------------------------------------------------------------------
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
+const API_BASE = "https://chat-service.fastapicloud.dev/";
 
 /**
  * Resolve a (possibly relative) image URL to one the browser can fetch.

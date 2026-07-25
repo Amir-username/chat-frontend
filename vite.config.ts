@@ -19,21 +19,21 @@ export default defineConfig({
     proxy: {
       // All REST calls go through /api/* — the axios client uses baseURL "/api"
       "/api": {
-        target: "http://localhost:8000",
+        target: "https://chat-service.fastapicloud.dev",
         changeOrigin: true,
         rewrite: (p) => p.replace(/^\/api/, ""),
       },
       // WebSocket calls go through /ws/* — the chat hook connects to
       // `${wsBase}/ws/chat/${roomId}?token=...` where wsBase is "" (same origin)
       "/ws": {
-        target: "ws://localhost:8000",
+        target: "ws://chat-service.fastapicloud.dev",
         ws: true,
         changeOrigin: true,
       },
       // Private-chat WebSocket lives at /private/ws/chat/{chat_id} on the
       // backend. Proxied separately because it's not under /ws.
       "/private/ws": {
-        target: "ws://localhost:8000",
+        target: "ws://chat-service.fastapicloud.dev",
         ws: true,
         changeOrigin: true,
       },
@@ -41,7 +41,7 @@ export default defineConfig({
       // returns relative URLs like `/uploads/profile_images/1_abc.jpg`, so
       // proxying /uploads lets the browser fetch them same-origin in dev.
       "/uploads": {
-        target: "http://localhost:8000",
+        target: "https://chat-service.fastapicloud.dev",
         changeOrigin: true,
       },
     },

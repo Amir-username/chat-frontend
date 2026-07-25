@@ -49,7 +49,7 @@ interface UsePrivateChatSocketResult {
 }
 
 function buildWsUrl(chatId: number, token: string): string {
-  const explicitBase = import.meta.env.VITE_API_BASE_URL;
+  const explicitBase = "https://chat-service.fastapicloud.dev";
   if (explicitBase) {
     const wsBase = explicitBase.replace(/^http/, "ws");
     return `${wsBase}/private/ws/chat/${chatId}?token=${encodeURIComponent(token)}`;
@@ -145,21 +145,16 @@ export function usePrivateChatSocket({
     return cleanup;
   }, [connect, cleanup]);
 
-  const send = useCallback(
-    (content: string, replyToId?: number | null) => {
-      const ws = wsRef.current;
-      if (!ws || ws.readyState !== WebSocket.OPEN) return;
-      // Only include `reply_to_id` when it's a real number — omitting it
-      // entirely is cleaner than sending `null` (and matches the backend's
-      // optional-field semantics).
-      const payload: PrivateOutgoingMessage =
-        replyToId != null
-          ? { content, reply_to_id: replyToId }
-          : { content };
-      ws.send(JSON.stringify(payload));
-    },
-    [],
-  );
+  const send = useCallback((content: string, replyToId?: number | null) => {
+    const ws = wsRef.current;
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    // Only include `reply_to_id` when it's a real number — omitting it
+    // entirely is cleaner than sending `null` (and matches the backend's
+    // optional-field semantics).
+    const payload: PrivateOutgoingMessage =
+      replyToId != null ? { content, reply_to_id: replyToId } : { content };
+    ws.send(JSON.stringify(payload));
+  }, []);
 
   const reconnect = useCallback(() => {
     backoffRef.current = 1000;

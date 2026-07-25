@@ -18,8 +18,13 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import PrivateChatList from "../components/PrivateChatList";
 import PrivateMessageList from "../components/PrivateMessageList";
-import MessageInput, { type ReplyTarget } from "@/features/chat/components/MessageInput";
-import { usePrivateChatSocket, type PrivateConnectionStatus } from "../hooks/usePrivateChatSocket";
+import MessageInput, {
+  type ReplyTarget,
+} from "@/features/chat/components/MessageInput";
+import {
+  usePrivateChatSocket,
+  type PrivateConnectionStatus,
+} from "../hooks/usePrivateChatSocket";
 import { getPrivateChat } from "../api/privateChat";
 import { useAuthStore, Avatar } from "@/features/auth";
 import type {
@@ -48,6 +53,7 @@ export default function PrivateChatPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const currentUser = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
 
   // The currently-open chat. Initialized from `?chat=<id>` in the URL so
   // deep-links work (e.g. "Message" button on a profile starts a chat and
@@ -61,17 +67,18 @@ export default function PrivateChatPage() {
 
   const setActiveChatId = useCallback(
     (id: number | null) => {
-      setSearchParams(
-        id == null ? {} : { chat: String(id) },
-        { replace: true },
-      );
+      setSearchParams(id == null ? {} : { chat: String(id) }, {
+        replace: true,
+      });
     },
     [setSearchParams],
   );
 
   // Snapshot of the active chat's details (other user info, etc.) fetched
   // once when the chat is opened.
-  const [activeChat, setActiveChat] = useState<PrivateChatWithMessages | null>(null);
+  const [activeChat, setActiveChat] = useState<PrivateChatWithMessages | null>(
+    null,
+  );
   const [loadingChat, setLoadingChat] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
 
@@ -106,7 +113,9 @@ export default function PrivateChatPage() {
           // Seed the message list from REST; the WebSocket's `history` frame
           // would be redundant, so we ignore history if it arrives (see the
           // onMessage handler — we skip history when we already have messages).
-          setMessages(data.messages.map((m) => ({ type: "message" as const, ...m })));
+          setMessages(
+            data.messages.map((m) => ({ type: "message" as const, ...m })),
+          );
         }
       } catch (err) {
         if (!cancelled) {
@@ -158,6 +167,11 @@ export default function PrivateChatPage() {
     [send, replyTo],
   );
 
+  async function handleLogout() {
+    await logout();
+    navigate("/login", { replace: true });
+  }
+
   // Called when the user clicks the reply affordance on a message bubble.
   // Converts the message into a ReplyTarget for the input bar.
   const handleReply = useCallback((msg: PrivateMessage) => {
@@ -206,8 +220,9 @@ export default function PrivateChatPage() {
     <div className="flex h-screen overflow-hidden">
       {/* ----- Left: conversation list ----- */}
       {(!isMobile || showListOnly) && (
-        <div className={isMobile ? "w-full" : "w-80 flex-shrink-0"}>
+        <div className={isMobile ? "w-full" : "w-80 shrink-0"}>
           <PrivateChatList
+            onLogout={handleLogout}
             activeChatId={activeChatId}
             onSelect={(id) => setActiveChatId(id)}
             showBackButton={isMobile}
@@ -236,7 +251,7 @@ export default function PrivateChatPage() {
               {/* Topbar — Telegram-style: avatar + name (clickable → profile)
                   + connection status. On mobile, a back button sits on the
                   left to return to the conversation list. */}
-              <header className="h-14 flex-shrink-0 border-b border-bg-3 flex items-center gap-3 px-3 bg-bg-1">
+              <header className="h-14 shrink-0 border-b border-bg-3 flex items-center gap-3 px-3 bg-bg-1">
                 {isMobile && (
                   <button
                     onClick={() => setActiveChatId(null)}
@@ -256,15 +271,15 @@ export default function PrivateChatPage() {
                 />
                 <div className="flex-1 min-w-0">
                   <button
-                    onClick={() => otherUserId != null && navigate(`/users/${otherUserId}`)}
+                    onClick={() =>
+                      otherUserId != null && navigate(`/users/${otherUserId}`)
+                    }
                     className="font-semibold text-[15px] text-fg-0 hover:underline truncate block max-w-full text-left"
                     title={`View ${otherUserName}'s profile`}
                   >
                     {otherUserName}
                   </button>
-                  <div className="text-[11px] text-fg-2">
-                    {headerStatus}
-                  </div>
+                  <div className="text-[11px] text-fg-2">{headerStatus}</div>
                 </div>
               </header>
 

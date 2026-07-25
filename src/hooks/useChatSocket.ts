@@ -34,7 +34,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { ChatMessage, OutgoingMessage } from "@/types";
 import { tokenStorage } from "@/api/tokens";
 
-export type ConnectionStatus = "idle" | "connecting" | "open" | "closed" | "error";
+export type ConnectionStatus =
+  | "idle"
+  | "connecting"
+  | "open"
+  | "closed"
+  | "error";
 
 interface UseChatSocketOptions {
   roomId: string | null;
