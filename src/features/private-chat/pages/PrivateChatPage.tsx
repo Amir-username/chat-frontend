@@ -1,21 +1,10 @@
 // ---------------------------------------------------------------------------
 // PrivateChatPage — two-pane direct-messages view.
-//
-// Layout:
-//   Desktop:  [conversation list] [active chat with topbar]
-//   Mobile:   [conversation list] OR [active chat with topbar + back button]
-//
-// The active chat's topbar shows the other participant's avatar + name
-// (clickable → their public profile), like Telegram/WhatsApp. Messages are
-// right-aligned for the current user, left-aligned for the other user.
-//
-// Realtime: a WebSocket is opened for the active chat (usePrivateChatSocket).
-// On connect, the server sends the last 50 messages as a `history` frame.
-// Sending goes through the socket (not REST) for snappy delivery.
 // ---------------------------------------------------------------------------
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import PrivateChatList from "../components/PrivateChatList";
 import PrivateMessageList from "../components/PrivateMessageList";
 import MessageInput, {
@@ -33,14 +22,6 @@ import type {
   PrivateMessage,
 } from "@/shared/types";
 
-const STATUS_LABEL: Record<PrivateConnectionStatus, string> = {
-  idle: "idle",
-  connecting: "connecting…",
-  open: "connected",
-  closed: "reconnecting…",
-  error: "error",
-};
-
 const STATUS_COLOR: Record<PrivateConnectionStatus, string> = {
   idle: "#6b7280",
   connecting: "#f59e0b",
@@ -50,15 +31,12 @@ const STATUS_COLOR: Record<PrivateConnectionStatus, string> = {
 };
 
 export default function PrivateChatPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const currentUser = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
 
-  // The currently-open chat. Initialized from `?chat=<id>` in the URL so
-  // deep-links work (e.g. "Message" button on a profile starts a chat and
-  // navigates here with the new chat ID). Selecting a chat from the list
-  // updates the URL; the URL is the source of truth.
   const chatParam = searchParams.get("chat");
   const activeChatId = useMemo(() => {
     const n = chatParam ? Number(chatParam) : NaN;
@@ -74,27 +52,17 @@ export default function PrivateChatPage() {
     [setSearchParams],
   );
 
-  // Snapshot of the active chat's details (other user info, etc.) fetched
-  // once when the chat is opened.
   const [activeChat, setActiveChat] = useState<PrivateChatWithMessages | null>(
     null,
   );
   const [loadingChat, setLoadingChat] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
 
-  // Messages stream — seeded from the REST fetch, then updated live by the
-  // WebSocket. Cleared whenever the active chat changes.
   const [messages, setMessages] = useState<PrivateChatWsMessage[]>([]);
 
-  // Reply target — when set, the input bar shows a preview of the quoted
-  // message and the next send includes `reply_to_id`. Cleared on send,
-  // on cancel, and when switching chats.
   const [replyTo, setReplyTo] = useState<ReplyTarget | null>(null);
 
-  // ----- REST: load the active chat's details + initial messages -----
   useEffect(() => {
-    // Clear any in-progress reply whenever the active chat changes —
-    // replying across chats doesn't make sense.
     setReplyTo(null);
     if (activeChatId == null) {
       setActiveChat(null);
@@ -110,9 +78,6 @@ export default function PrivateChatPage() {
         const data = await getPrivateChat(activeChatId);
         if (!cancelled) {
           setActiveChat(data);
-          // Seed the message list from REST; the WebSocket's `history` frame
-          // would be redundant, so we ignore history if it arrives (see the
-          // onMessage handler — we skip history when we already have messages).
           setMessages(
             data.messages.map((m) => ({ type: "message" as const, ...m })),
           );
@@ -120,7 +85,7 @@ export default function PrivateChatPage() {
       } catch (err) {
         if (!cancelled) {
           setChatError(
-            err instanceof Error ? err.message : "Failed to load chat",
+            err instanceof Error ? err.message : t("chat.failedToLoadChat"),
           );
         }
       } finally {
@@ -130,19 +95,14 @@ export default function PrivateChatPage() {
     return () => {
       cancelled = true;
     };
-  }, [activeChatId]);
+  }, [activeChatId, t]);
 
-  // ----- WebSocket: realtime updates for the active chat -----
   const onMessage = useCallback((msg: PrivateChatWsMessage) => {
     setMessages((prev) => {
-      // The server sends a `history` frame on connect. If we already seeded
-      // from REST, skip it to avoid duplicates.
       if (msg.type === "history") {
         if (prev.length > 0) return prev;
         return msg.messages.map((m) => ({ type: "message" as const, ...m }));
       }
-      // Dedupe by id for `message` frames — the WS broadcasts to both
-      // participants, and we also get a copy when the other user sends.
       if (msg.type === "message" && "id" in msg) {
         if (prev.some((p) => p.type === "message" && p.id === msg.id)) {
           return prev;
@@ -157,8 +117,6 @@ export default function PrivateChatPage() {
     onMessage,
   });
 
-  // Wrap `send` so we can attach the in-progress reply's id (if any) and
-  // clear the reply target after the message goes out.
   const handleSend = useCallback(
     (content: string) => {
       send(content, replyTo?.id);
@@ -172,8 +130,6 @@ export default function PrivateChatPage() {
     navigate("/login", { replace: true });
   }
 
-  // Called when the user clicks the reply affordance on a message bubble.
-  // Converts the message into a ReplyTarget for the input bar.
   const handleReply = useCallback((msg: PrivateMessage) => {
     setReplyTo({
       id: msg.id,
@@ -182,8 +138,6 @@ export default function PrivateChatPage() {
     });
   }, []);
 
-  // ----- Mobile: whether to show the list or the active chat -----
-  // On wide screens we show both panes; on narrow screens we toggle.
   const [isMobile, setIsMobile] = useState(
     typeof window !== "undefined" ? window.innerWidth < 768 : false,
   );
@@ -196,6 +150,17 @@ export default function PrivateChatPage() {
   const showListOnly = isMobile && activeChatId == null;
   const showChatOnly = isMobile && activeChatId != null;
 
+  const statusLabel = useMemo(
+    () => ({
+      idle: t("connection.idle"),
+      connecting: t("connection.connecting"),
+      open: t("connection.connected"),
+      closed: t("connection.reconnecting"),
+      error: t("connection.error"),
+    }),
+    [t],
+  );
+
   const headerStatus = useMemo(
     () => (
       <span
@@ -203,10 +168,10 @@ export default function PrivateChatPage() {
         style={{ color: STATUS_COLOR[status] }}
       >
         <span className="w-2 h-2 rounded-full bg-current" />
-        {STATUS_LABEL[status]}
+        {statusLabel[status]}
       </span>
     ),
-    [status],
+    [status, statusLabel],
   );
 
   const otherUserId = activeChat?.other_user_id ?? null;
@@ -218,7 +183,6 @@ export default function PrivateChatPage() {
 
   return (
     <div className="flex h-screen overflow-hidden">
-      {/* ----- Left: conversation list ----- */}
       {(!isMobile || showListOnly) && (
         <div className={isMobile ? "w-full" : "w-80 shrink-0"}>
           <PrivateChatList
@@ -231,16 +195,15 @@ export default function PrivateChatPage() {
         </div>
       )}
 
-      {/* ----- Right: active chat ----- */}
       {(!isMobile || showChatOnly) && (
         <main className="flex-1 flex flex-col min-w-0 bg-bg-0">
           {activeChatId == null ? (
             <div className="flex-1 flex items-center justify-center text-fg-2 text-sm px-6 text-center">
-              Select a conversation to start chatting
+              {t("chat.selectConversation")}
             </div>
           ) : loadingChat ? (
             <div className="flex-1 flex items-center justify-center text-fg-2 text-sm">
-              Loading chat…
+              {t("chat.loadingChat")}
             </div>
           ) : chatError ? (
             <div className="flex-1 flex items-center justify-center text-red-500 text-sm px-6 text-center">
@@ -248,15 +211,12 @@ export default function PrivateChatPage() {
             </div>
           ) : (
             <>
-              {/* Topbar — Telegram-style: avatar + name (clickable → profile)
-                  + connection status. On mobile, a back button sits on the
-                  left to return to the conversation list. */}
               <header className="h-14 shrink-0 border-b border-bg-3 flex items-center gap-3 px-3 bg-bg-1">
                 {isMobile && (
                   <button
                     onClick={() => setActiveChatId(null)}
                     className="btn btn-ghost px-2 py-1 text-sm"
-                    aria-label="Back to conversations"
+                    aria-label={t("chat.backToConversations")}
                   >
                     ←
                   </button>
@@ -275,7 +235,7 @@ export default function PrivateChatPage() {
                       otherUserId != null && navigate(`/users/${otherUserId}`)
                     }
                     className="font-semibold text-[15px] text-fg-0 hover:underline truncate block max-w-full text-left"
-                    title={`View ${otherUserName}'s profile`}
+                    title={t("profile.viewProfile", { name: otherUserName })}
                   >
                     {otherUserName}
                   </button>

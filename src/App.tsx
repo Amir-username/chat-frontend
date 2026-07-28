@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuthStore } from "@/features/auth";
 import {
@@ -10,9 +11,10 @@ import { PrivateChatPage } from "@/features/private-chat";
 
 /** Full-screen spinner shown while we hydrate the session. */
 function FullScreenLoader() {
+  const { t } = useTranslation();
   return (
     <div className="h-screen flex items-center justify-center text-fg-1">
-      <div>Loading…</div>
+      <div>{t("common.loading")}</div>
     </div>
   );
 }

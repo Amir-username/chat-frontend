@@ -1,19 +1,9 @@
 // ---------------------------------------------------------------------------
 // PrivateMessageList — Telegram-style 1-on-1 message view.
-//
-// Layout:
-//   - Messages from the current user: right-aligned, accent-colored bubble.
-//   - Messages from the other user: left-aligned, dark bubble.
-//   - System messages ("X is online" / "X went offline"): centered, muted.
-//
-// Reply feature:
-//   - Each message bubble has a small "reply" affordance that appears on hover
-//     (desktop) or is always visible (mobile — there's no hover on touch).
-//   - Mobile Gestures: Swipe-to-reply (swipe left/right on the bubble) and
-//     Long-press-to-reply (tap and hold) are supported via touch events.
 // ---------------------------------------------------------------------------
 
 import { memo, useEffect, useRef, useState, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import {
   isPrivateMessage,
   type PrivateChatWsMessage,
@@ -125,9 +115,6 @@ function ReplyQuote({ reply, isOwn }: { reply: ReplyPreview; isOwn: boolean }) {
   );
 }
 
-/**
- * Wrapper that handles Swipe-to-Reply and Long-Press-to-Reply on mobile devices.
- */
 function MessageBubbleWrapper({
   isOwn,
   onReplyTrigger,
@@ -145,11 +132,8 @@ function MessageBubbleWrapper({
   const handleTouchStart = (e: React.TouchEvent) => {
     startX.current = e.touches[0].clientX;
     setIsDragging(true);
-
-    // Start long-press timer (500ms)
     longPressTimer.current = setTimeout(() => {
       onReplyTrigger();
-      // Reset drag state if long press triggers
       setDragX(0);
       setIsDragging(false);
     }, 500);
@@ -157,25 +141,17 @@ function MessageBubbleWrapper({
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!isDragging) return;
-
     const currentX = e.touches[0].clientX;
     let delta = currentX - startX.current;
-
-    // Cancel long press if user moves finger
     if (Math.abs(delta) > 10 && longPressTimer.current) {
       clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
     }
-
-    // Restrict swipe direction based on ownership (Telegram style)
-    // Own messages (right side): swipe left (negative delta)
-    // Other messages (left side): swipe right (positive delta)
     if (isOwn) {
       delta = Math.min(0, Math.max(-80, delta));
     } else {
       delta = Math.max(0, Math.min(80, delta));
     }
-
     setDragX(delta);
   };
 
@@ -185,13 +161,9 @@ function MessageBubbleWrapper({
       clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
     }
-
-    // If swiped past threshold, trigger reply
     if (Math.abs(dragX) > 40) {
       onReplyTrigger();
     }
-
-    // Snap back to original position
     setDragX(0);
   };
 
@@ -203,7 +175,6 @@ function MessageBubbleWrapper({
       style={{
         transform: `translateX(${dragX}px)`,
         transition: isDragging ? "none" : "transform 0.2s ease-out",
-        // Allows vertical scrolling while capturing horizontal swipes
         touchAction: "pan-y",
       }}
       className="flex items-end gap-1"
@@ -221,6 +192,7 @@ function PrivateMessageList({
   otherUserImage,
   onReply,
 }: PrivateMessageListProps) {
+  const { t } = useTranslation();
   const bottomRef = useRef<HTMLDivElement>(null);
   const rendered = toRendered(messages, currentUserId);
 
@@ -231,7 +203,7 @@ function PrivateMessageList({
   if (messages.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center text-fg-2 text-[13px] px-6 text-center">
-        No messages yet — say hello 👋
+        {t("chat.noMessagesYet")}
       </div>
     );
   }
@@ -287,14 +259,12 @@ function PrivateMessageList({
               isOwn={isOwn}
               onReplyTrigger={() => handleReply(row)}
             >
-              {/* Reply Button Left (For other user's messages) */}
               {onReply && !isOwn && (
                 <button
                   onClick={() => handleReply(row)}
-                  // Always visible on mobile, hover only on desktop
                   className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity text-fg-2 hover:text-fg-0 px-1 py-1"
-                  title="Reply"
-                  aria-label="Reply to this message"
+                  title={t("common.reply")}
+                  aria-label={t("common.reply")}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                     <path
@@ -348,13 +318,12 @@ function PrivateMessageList({
                 )}
               </div>
 
-              {/* Reply Button Right (For own messages) */}
               {onReply && isOwn && (
                 <button
                   onClick={() => handleReply(row)}
                   className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity text-fg-2 hover:text-fg-0 px-1 py-1"
-                  title="Reply"
-                  aria-label="Reply to this message"
+                  title={t("common.reply")}
+                  aria-label={t("common.reply")}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                     <path

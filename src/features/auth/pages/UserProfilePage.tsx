@@ -10,10 +10,13 @@
 
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuthStore, useUserProfile, Avatar } from "@/features/auth";
 import { startPrivateChat } from "@/features/private-chat";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export default function UserProfilePage() {
+  const { t } = useTranslation();
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   const currentUser = useAuthStore((s) => s.user);
@@ -27,7 +30,6 @@ export default function UserProfilePage() {
     isValidId ? numericId : null,
   );
 
-  // Is this the current user viewing their own profile?
   const isSelf =
     currentUser != null &&
     profile != null &&
@@ -42,7 +44,7 @@ export default function UserProfilePage() {
       navigate(`/private-chat?chat=${chat.id}`);
     } catch (err) {
       setChatError(
-        err instanceof Error ? err.message : "Failed to start chat",
+        err instanceof Error ? err.message : t("profile.failedToStartChat"),
       );
     } finally {
       setStartingChat(false);
@@ -58,15 +60,16 @@ export default function UserProfilePage() {
             onClick={() => navigate(-1)}
             className="btn btn-ghost px-3 py-1.5 text-sm"
           >
-            ← Back
+            {t("common.back")}
           </button>
-          <h1 className="text-lg font-semibold">Profile</h1>
-          {/* Spacer to keep the title centered */}
-          <div className="w-16" />
+          <h1 className="text-lg font-semibold">{t("profile.profile")}</h1>
+          <div className="w-16 flex items-center justify-end gap-1">
+            <LanguageSwitcher />
+          </div>
         </div>
 
         {loading && (
-          <div className="text-center text-fg-2 py-20">Loading profile…</div>
+          <div className="text-center text-fg-2 py-20">{t("profile.loadingProfile")}</div>
         )}
 
         {error && (
@@ -95,7 +98,7 @@ export default function UserProfilePage() {
                   to="/profile"
                   className="btn btn-secondary mt-5 px-4 py-2 text-sm"
                 >
-                  Edit your profile
+                  {t("profile.editYourProfile")}
                 </Link>
               ) : (
                 <button
@@ -103,7 +106,7 @@ export default function UserProfilePage() {
                   disabled={startingChat}
                   className="btn btn-primary mt-5 px-4 py-2 text-sm"
                 >
-                  {startingChat ? "Starting chat…" : "Message"}
+                  {startingChat ? t("profile.startingChat") : t("profile.message")}
                 </button>
               )}
               {chatError && (
@@ -116,7 +119,7 @@ export default function UserProfilePage() {
             {/* Bio */}
             <div className="bg-bg-1 border border-bg-3 rounded-lg p-6">
               <h3 className="text-xs text-fg-1 font-medium uppercase tracking-wide mb-3">
-                Bio
+                {t("profile.bio")}
               </h3>
               {profile.bio ? (
                 <p className="text-sm text-fg-0 leading-relaxed whitespace-pre-wrap">
@@ -125,8 +128,8 @@ export default function UserProfilePage() {
               ) : (
                 <p className="text-sm text-fg-2 italic">
                   {isSelf
-                    ? "You haven't added a bio yet."
-                    : "This user hasn't added a bio."}
+                    ? t("profile.noBioSelf")
+                    : t("profile.noBioOther")}
                 </p>
               )}
             </div>
@@ -135,7 +138,7 @@ export default function UserProfilePage() {
 
         {!loading && !error && !profile && !isValidId && (
           <div className="bg-red-500/10 text-red-500 border border-red-500/30 rounded-md px-4 py-3 text-sm text-center">
-            Invalid user ID.
+            {t("profile.invalidUserId")}
           </div>
         )}
       </div>

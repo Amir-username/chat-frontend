@@ -1,15 +1,14 @@
 import { memo, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { isUserMessage, type ChatMessage, type UserId } from "@/shared/types";
 import { colorForUser, readableTextOn } from "../utils/colors";
 import { useUserProfile, Avatar } from "@/features/auth";
 
 interface MessageListProps {
   messages: ChatMessage[];
-  /** ID of the current user (so we can right-align their own messages). */
   currentUserId: number | string | undefined;
 }
 
-/** Format an ISO timestamp as a short local time, e.g. "14:23". */
 function formatTime(iso: string): string {
   try {
     const d = new Date(iso);
@@ -25,17 +24,12 @@ interface RenderedMessage {
   timestamp: string;
   name?: string;
   userId?: number | string;
-  /** Hex color assigned to this user (stable across clients). */
   userColor?: string;
-  /** Whether to show the avatar/name header (collapsed otherwise). */
   showHeader: boolean;
   isOwn: boolean;
   key: string;
 }
 
-/** Pre-process the raw message stream into render-ready rows. Doing this in
- *  one pass keeps the render code simple and lets us compute `showHeader`
- *  (message grouping) without re-narrowing types in JSX. */
 function toRendered(
   messages: ChatMessage[],
   currentUserId: number | string | undefined,
@@ -53,8 +47,7 @@ function toRendered(
       });
       return;
     }
-    if (!isUserMessage(msg)) return; // `history` should never reach here —
-    // the socket hook unwraps it. Defensive guard just in case.
+    if (!isUserMessage(msg)) return;
 
     const prev = messages[idx - 1];
     const prevUser =
@@ -77,17 +70,6 @@ function toRendered(
   return out;
 }
 
-/**
- * Avatar for a single chat message. Calls `useUserProfile` to fetch the
- * sender's profile image (cached at module level so each user is fetched
- * only once across the whole app). Extracted as its own component because
- * hooks can't be called inside a `.map()` callback.
- *
- * - Other users: renders the profile image (or colored initial fallback)
- *   wrapped in a <Link> to their public profile /users/:id.
- * - Own messages: renders the profile image / initial WITHOUT a link —
- *   tapping your own avatar would be noisy (every message is yours).
- */
 function MessageAvatar({
   userId,
   name,
@@ -109,7 +91,6 @@ function MessageAvatar({
         name={name}
         imageUrl={imageUrl}
         size={36}
-        // Only link to the public profile for OTHER users.
         href={isOwn ? undefined : `/users/${userId}`}
         interactive={!isOwn}
       />
@@ -118,10 +99,10 @@ function MessageAvatar({
 }
 
 function MessageList({ messages, currentUserId }: MessageListProps) {
+  const { t } = useTranslation();
   const bottomRef = useRef<HTMLDivElement>(null);
   const rendered = toRendered(messages, currentUserId);
 
-  // Auto-scroll to the newest message whenever the list changes.
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages]);
@@ -129,7 +110,7 @@ function MessageList({ messages, currentUserId }: MessageListProps) {
   if (messages.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center text-fg-2 text-[13px]">
-        No messages yet — say hello 👋
+        {t("chat.noMessagesYet")}
       </div>
     );
   }
@@ -164,9 +145,6 @@ function MessageList({ messages, currentUserId }: MessageListProps) {
               (isOwn ? "flex-row-reverse" : "flex-row")
             }
           >
-            {/* Avatar — fetches the sender's profile image.
-                Visibility is toggled so consecutive messages from the same
-                user collapse the avatar (but keep the slot for alignment). */}
             {row.userId != null && (
               <MessageAvatar
                 userId={row.userId}
@@ -176,7 +154,6 @@ function MessageList({ messages, currentUserId }: MessageListProps) {
               />
             )}
 
-            {/* Bubble + meta */}
             <div
               className={
                 "flex flex-col max-w-[70%] " +
@@ -194,7 +171,7 @@ function MessageList({ messages, currentUserId }: MessageListProps) {
                     className="text-[13px] font-semibold"
                     style={{ color }}
                   >
-                    {isOwn ? "You" : row.name}
+                    {isOwn ? t("common.you") : row.name}
                   </span>
                   <span className="text-[11px] text-fg-2">
                     {formatTime(row.timestamp)}

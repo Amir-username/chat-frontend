@@ -10,6 +10,7 @@
 // navigate to the user's public profile page).
 // ---------------------------------------------------------------------------
 
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { colorForUser, readableTextOn } from "@/features/chat/utils/colors";
 import { resolveImageUrl } from "@/shared";
@@ -42,6 +43,7 @@ export default function Avatar({
   className = "",
   interactive = false,
 }: AvatarProps) {
+  const { t } = useTranslation();
   const color = colorForUser(userId);
   const onColor = readableTextOn(color);
   const resolved = resolveImageUrl(imageUrl ?? null);
@@ -80,7 +82,7 @@ export default function Avatar({
           className
         }
         style={dimension}
-        title={name ? `View ${name}'s profile` : "View profile"}
+        title={name ? t("profile.viewProfile", { name }) : t("profile.profile")}
       >
         {inner}
       </Link>

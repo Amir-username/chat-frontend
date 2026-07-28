@@ -1,30 +1,30 @@
 import { useRef, useState, type FormEvent, type ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/features/auth";
 import { updateMyProfile, uploadProfileImage } from "@/features/auth";
 import { resolveImageUrl } from "@/shared";
 import { colorForUser, readableTextOn } from "@/features/chat/utils/colors";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export default function ProfilePage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const setProfile = useAuthStore((s) => s.setProfile);
   const logout = useAuthStore((s) => s.logout);
 
-  // Editable form state — seeded from the cached profile.
   const [name, setName] = useState(user?.name ?? "");
   const [bio, setBio] = useState(user?.bio ?? "");
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [profileSuccess, setProfileSuccess] = useState<string | null>(null);
 
-  // Image upload state.
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
 
   if (!user) {
-    // Shouldn't happen (route is protected) but guard anyway.
     navigate("/login", { replace: true });
     return null;
   }
@@ -36,23 +36,21 @@ export default function ProfilePage() {
 
     const trimmedName = name.trim();
     if (!trimmedName) {
-      setProfileError("Name cannot be empty");
+      setProfileError(t("profile.nameEmpty"));
       return;
     }
 
     setSavingProfile(true);
     try {
-      // Send both fields — the backend only updates the ones present, and we
-      // want bio to be clearable (empty string → cleared).
       const updated = await updateMyProfile({
         name: trimmedName,
         bio: bio.trim() || null,
       });
       setProfile(updated);
-      setProfileSuccess("Profile saved");
+      setProfileSuccess(t("profile.profileSaved"));
       setTimeout(() => setProfileSuccess(null), 2500);
     } catch (err) {
-      setProfileError(err instanceof Error ? err.message : "Failed to save");
+      setProfileError(err instanceof Error ? err.message : t("profile.failedToSave"));
     } finally {
       setSavingProfile(false);
     }
@@ -68,10 +66,9 @@ export default function ProfilePage() {
       const updated = await uploadProfileImage(file);
       setProfile(updated);
     } catch (err) {
-      setImageError(err instanceof Error ? err.message : "Upload failed");
+      setImageError(err instanceof Error ? err.message : t("profile.uploadFailed"));
     } finally {
       setUploading(false);
-      // Reset the input so selecting the same file again re-triggers onChange.
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   }
@@ -81,7 +78,6 @@ export default function ProfilePage() {
     navigate("/login", { replace: true });
   }
 
-  // Avatar color derived from user ID (same as chat messages).
   const avatarColor = colorForUser(user.id);
   const avatarText = readableTextOn(avatarColor);
   const imageUrl = resolveImageUrl(user.profile_image);
@@ -96,15 +92,18 @@ export default function ProfilePage() {
             onClick={() => navigate("/chat")}
             className="btn btn-ghost px-3 py-1.5 text-sm"
           >
-            ← Back to chat
+            {t("profile.backToChat")}
           </button>
-          <h1 className="text-lg font-semibold">Your profile</h1>
-          <button
-            onClick={handleLogout}
-            className="btn btn-ghost px-3 py-1.5 text-sm text-fg-1"
-          >
-            Sign out
-          </button>
+          <h1 className="text-lg font-semibold">{t("profile.yourProfile")}</h1>
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher />
+            <button
+              onClick={handleLogout}
+              className="btn btn-ghost px-3 py-1.5 text-sm text-fg-1"
+            >
+              {t("common.signOut")}
+            </button>
+          </div>
         </div>
 
         {/* Avatar + image upload */}
@@ -125,13 +124,12 @@ export default function ProfilePage() {
               </div>
             )}
 
-            {/* Upload button overlaid on the avatar */}
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
               className="absolute bottom-0 right-0 w-9 h-9 rounded-full bg-accent text-white flex items-center justify-center hover:bg-accent-hover transition-colors disabled:opacity-60"
-              title="Upload profile picture"
-              aria-label="Upload profile picture"
+              title={t("profile.uploadProfilePicture")}
+              aria-label={t("profile.uploadProfilePicture")}
             >
               {uploading ? (
                 <span className="text-xs">…</span>
@@ -155,7 +153,7 @@ export default function ProfilePage() {
             />
           </div>
           <p className="text-xs text-fg-2 mt-3">
-            JPG, PNG, GIF, or WebP — max 5 MB
+            {t("profile.imageFormats")}
           </p>
           {imageError && (
             <p className="text-red-500 text-xs mt-2">{imageError}</p>
@@ -183,7 +181,7 @@ export default function ProfilePage() {
               htmlFor="name"
               className="block mb-1.5 text-xs text-fg-1 font-medium uppercase tracking-wide"
             >
-              Display name
+              {t("profile.displayName")}
             </label>
             <input
               id="name"
@@ -203,7 +201,7 @@ export default function ProfilePage() {
               htmlFor="bio"
               className="block mb-1.5 text-xs text-fg-1 font-medium uppercase tracking-wide"
             >
-              Bio
+              {t("profile.bio")}
             </label>
             <textarea
               id="bio"
@@ -211,7 +209,7 @@ export default function ProfilePage() {
               maxLength={2000}
               value={bio}
               onChange={(e) => setBio(e.target.value)}
-              placeholder="Tell people a little about yourself…"
+              placeholder={t("profile.bioPlaceholder")}
               className="w-full resize-none"
               disabled={savingProfile}
             />
@@ -220,10 +218,9 @@ export default function ProfilePage() {
             </p>
           </div>
 
-          {/* Email is read-only — it's not editable via this endpoint */}
           <div className="mb-6">
             <label className="block mb-1.5 text-xs text-fg-1 font-medium uppercase tracking-wide">
-              Email
+              {t("profile.email")}
             </label>
             <input
               type="email"
@@ -238,7 +235,7 @@ export default function ProfilePage() {
             className="btn btn-primary w-full"
             disabled={savingProfile || !name.trim()}
           >
-            {savingProfile ? "Saving…" : "Save changes"}
+            {savingProfile ? t("profile.saving") : t("profile.saveChanges")}
           </button>
         </form>
       </div>

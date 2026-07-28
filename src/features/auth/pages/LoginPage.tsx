@@ -1,8 +1,11 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/features/auth";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export default function LoginPage() {
+  const { t } = useTranslation();
   const login = useAuthStore((s) => s.login);
   const navigate = useNavigate();
 
@@ -19,7 +22,7 @@ export default function LoginPage() {
       await login({ email, password });
       navigate("/chat");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      setError(err instanceof Error ? err.message : t("auth.login.loginFailed"));
     } finally {
       setSubmitting(false);
     }
@@ -28,14 +31,17 @@ export default function LoginPage() {
   return (
     <div className="h-screen flex items-center justify-center p-4 bg-bg-0">
       <div className="auth-card">
-        <h1>Welcome back</h1>
-        <p className="subtitle">Sign in to your chat account</p>
+        <div className="flex items-center justify-between">
+          <h1>{t("auth.login.title")}</h1>
+          <LanguageSwitcher />
+        </div>
+        <p className="subtitle">{t("auth.login.subtitle")}</p>
 
         {error && <div className="error">{error}</div>}
 
         <form onSubmit={handleSubmit}>
           <div className="field">
-            <label htmlFor="email">Email</label>
+            <label htmlFor="email">{t("auth.login.emailLabel")}</label>
             <input
               id="email"
               type="email"
@@ -43,13 +49,13 @@ export default function LoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
+              placeholder={t("auth.login.emailPlaceholder")}
               disabled={submitting}
             />
           </div>
 
           <div className="field">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password">{t("auth.login.passwordLabel")}</label>
             <input
               id="password"
               type="password"
@@ -57,7 +63,7 @@ export default function LoginPage() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
+              placeholder={t("auth.login.passwordPlaceholder")}
               disabled={submitting}
             />
           </div>
@@ -67,12 +73,13 @@ export default function LoginPage() {
             className="btn btn-primary w-full"
             disabled={submitting || !email || !password}
           >
-            {submitting ? "Signing in…" : "Sign in"}
+            {submitting ? t("auth.login.submitting") : t("auth.login.submit")}
           </button>
         </form>
 
         <div className="switch-link">
-          Don't have an account? <Link to="/register">Create one</Link>
+          {t("auth.login.noAccount")}{" "}
+          <Link to="/register">{t("auth.login.createOne")}</Link>
         </div>
       </div>
     </div>

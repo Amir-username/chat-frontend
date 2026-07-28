@@ -1,37 +1,23 @@
 // ---------------------------------------------------------------------------
 // PrivateChatList — sidebar list of the current user's 1-on-1 conversations.
-//
-// Each row shows the other participant's avatar, name, last message preview,
-// and a relative timestamp. Clicking a row selects that chat.
-//
-// Shown in a two-pane layout (list | active chat) on desktop, and as the
-// full view on mobile when no chat is selected.
 // ---------------------------------------------------------------------------
 
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { PrivateChatListItem, ProfileResponse } from "@/shared/types";
 import { listPrivateChats, startPrivateChat } from "../api/privateChat";
 import { Avatar, UserSearchOverlay } from "@/features/auth";
 import SearchIcon from "@/shared/components/icons/SearchIcon";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 interface PrivateChatListProps {
-  /** ID of the currently-open chat (for highlight). Null if none selected. */
   activeChatId: number | null;
-  /** Called when the user picks a chat from the list OR when a new chat is
-   *  started via the search overlay. */
   onSelect: (chatId: number) => void;
-  /** When true, shows a back button instead of the "new chat" button.
-   *  Used on mobile to navigate back to the rooms sidebar. */
   showBackButton?: boolean;
   onBack?: () => void;
   onLogout: () => void;
 }
 
-/** Format an ISO timestamp as a short relative string:
- *  - within 1 min: "now"
- *  - same day: "14:23"
- *  - within a week: "Mon"
- *  - older: "Mar 3" */
 function formatRelative(iso: string | null): string {
   if (!iso) return "";
   try {
@@ -61,16 +47,12 @@ export default function PrivateChatList({
   onBack,
   onLogout
 }: PrivateChatListProps) {
+  const { t } = useTranslation();
   const [chats, setChats] = useState<PrivateChatListItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  // Search overlay state — opened by the "New" button.
   const [searchOpen, setSearchOpen] = useState(false);
-  // Tracks whether we're starting a new chat (so we can disable the overlay
-  // list while the POST /private/chats request is in flight).
   const [startingChatFor, setStartingChatFor] = useState<number | null>(null);
 
-  // Load the chat list on mount. Re-fetch when the component remounts
-  // (e.g. when navigating back to the list view on mobile).
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -83,7 +65,7 @@ export default function PrivateChatList({
       } catch (err) {
         if (!cancelled) {
           const msg =
-            err instanceof Error ? err.message : "Failed to load conversations";
+            err instanceof Error ? err.message : t("chat.failedToLoadConversations");
           setError(msg);
         }
       }
@@ -91,10 +73,8 @@ export default function PrivateChatList({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [t]);
 
-  // Refresh the list whenever a chat is selected (a new chat was just created
-  // — we want it to appear in the sidebar).
   useEffect(() => {
     if (activeChatId == null) return;
     let cancelled = false;
@@ -103,7 +83,7 @@ export default function PrivateChatList({
         const data = await listPrivateChats();
         if (!cancelled) setChats(data);
       } catch {
-        // Silent — the list will refresh on next mount.
+        // Silent
       }
     })();
     return () => {
@@ -111,15 +91,13 @@ export default function PrivateChatList({
     };
   }, [activeChatId]);
 
-  /** Called when the user picks a result from the search overlay. Starts a
-   *  new private chat (or fetches the existing one) and opens it. */
   async function handleSearchSelectUser(user: ProfileResponse) {
     setStartingChatFor(Number(user.id));
     try {
       const chat = await startPrivateChat({ user_id: Number(user.id) });
       onSelect(chat.id);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Failed to start chat";
+      const msg = err instanceof Error ? err.message : t("chat.failedToLoadChat");
       setError(msg);
     } finally {
       setStartingChatFor(null);
@@ -135,21 +113,24 @@ export default function PrivateChatList({
             <button
               onClick={onBack}
               className="btn btn-ghost px-2 py-1 text-sm"
-              aria-label="Back to rooms"
+              aria-label={t("common.back")}
             >
               ←
             </button>
           )}
-          <h2 className="font-semibold text-[15px]">Direct Messages</h2>
+          <h2 className="font-semibold text-[15px]">{t("chat.directMessages")}</h2>
         </div>
-        <button
-          onClick={() => setSearchOpen(true)}
-          disabled={startingChatFor !== null}
-          className="btn btn-ghost px-2 py-1 text-sm"
-          title="Start a new chat"
-        >
-          <SearchIcon />
-        </button>
+        <div className="flex items-center gap-1">
+          <LanguageSwitcher />
+          <button
+            onClick={() => setSearchOpen(true)}
+            disabled={startingChatFor !== null}
+            className="btn btn-ghost px-2 py-1 text-sm"
+            title={t("chat.startNewChat")}
+          >
+            <SearchIcon />
+          </button>
+        </div>
       </div>
 
       {/* List */}
@@ -157,14 +138,14 @@ export default function PrivateChatList({
         {error && <div className="px-4 py-3 text-sm text-red-500">{error}</div>}
         {chats === null && !error && (
           <div className="px-4 py-6 text-sm text-fg-2 text-center">
-            Loading…
+            {t("common.loading")}
           </div>
         )}
         {chats !== null && chats.length === 0 && (
           <div className="px-4 py-8 text-sm text-fg-2 text-center">
-            No conversations yet.
+            {t("chat.noConversationsYet")}
             <br />
-            Visit someone's profile to start a chat.
+            {t("chat.visitProfileToChat")}
           </div>
         )}
         {chats !== null &&
@@ -204,7 +185,7 @@ export default function PrivateChatList({
                     )}
                   </div>
                   <div className="text-[12px] text-fg-2 truncate mt-0.5">
-                    {chat.last_message ?? "No messages yet"}
+                    {chat.last_message ?? t("chat.noMessagesInChat")}
                   </div>
                 </div>
               </button>
@@ -216,19 +197,18 @@ export default function PrivateChatList({
         <button
           onClick={onLogout}
           className="btn btn-ghost px-2.5 py-1.5 text-xs"
-          title="Sign out"
+          title={t("common.signOut")}
         >
-          Sign out
+          {t("common.signOut")}
         </button>
       </div>
 
-      {/* User-search overlay — selecting a result starts a new private chat. */}
       <UserSearchOverlay
         open={searchOpen}
         onClose={() => setSearchOpen(false)}
         onSelectUser={handleSearchSelectUser}
-        title="Start a new chat"
-        placeholder="Search users by name to chat with…"
+        title={t("chat.startNewChat")}
+        placeholder={t("search.chatSearchPlaceholder")}
       />
     </aside>
   );

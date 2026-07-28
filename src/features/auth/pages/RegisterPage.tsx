@@ -1,8 +1,11 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/features/auth";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export default function RegisterPage() {
+  const { t } = useTranslation();
   const register = useAuthStore((s) => s.register);
   const navigate = useNavigate();
 
@@ -21,26 +24,24 @@ export default function RegisterPage() {
     setSuccess(null);
 
     if (password !== confirm) {
-      setError("Passwords do not match");
+      setError(t("auth.register.passwordMismatch"));
       return;
     }
     if (password.length < 8) {
-      setError("Password must be at least 8 characters");
+      setError(t("auth.register.passwordTooShort"));
       return;
     }
 
     setSubmitting(true);
     try {
-      // bio is optional — only include it if the user typed something,
-      // so we don't send an empty string that would override the default null.
       const payload = bio.trim()
         ? { name, email, password, bio: bio.trim() }
         : { name, email, password };
       const user = await register(payload);
-      setSuccess(`Account created for ${user.email}. Redirecting to login…`);
+      setSuccess(t("auth.register.accountCreated", { email: user.email }));
       setTimeout(() => navigate("/login"), 1200);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Registration failed");
+      setError(err instanceof Error ? err.message : t("auth.register.registrationFailed"));
     } finally {
       setSubmitting(false);
     }
@@ -49,15 +50,18 @@ export default function RegisterPage() {
   return (
     <div className="flex justify-center bg-bg-0">
       <div className="auth-card my-8">
-        <h1>Create your account</h1>
-        <p className="subtitle">It only takes a few seconds</p>
+        <div className="flex items-center justify-between">
+          <h1>{t("auth.register.title")}</h1>
+          <LanguageSwitcher />
+        </div>
+        <p className="subtitle">{t("auth.register.subtitle")}</p>
 
         {error && <div className="error">{error}</div>}
         {success && <div className="success">{success}</div>}
 
         <form onSubmit={handleSubmit}>
           <div className="field">
-            <label htmlFor="name">Display name</label>
+            <label htmlFor="name">{t("auth.register.nameLabel")}</label>
             <input
               id="name"
               type="text"
@@ -67,13 +71,13 @@ export default function RegisterPage() {
               maxLength={255}
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Ada Lovelace"
+              placeholder={t("auth.register.namePlaceholder")}
               disabled={submitting}
             />
           </div>
 
           <div className="field">
-            <label htmlFor="email">Email</label>
+            <label htmlFor="email">{t("auth.register.emailLabel")}</label>
             <input
               id="email"
               type="email"
@@ -81,13 +85,13 @@ export default function RegisterPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
+              placeholder={t("auth.register.emailPlaceholder")}
               disabled={submitting}
             />
           </div>
 
           <div className="field">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password">{t("auth.register.passwordLabel")}</label>
             <input
               id="password"
               type="password"
@@ -96,13 +100,13 @@ export default function RegisterPage() {
               minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="At least 8 characters"
+              placeholder={t("auth.register.passwordPlaceholder")}
               disabled={submitting}
             />
           </div>
 
           <div className="field">
-            <label htmlFor="confirm">Confirm password</label>
+            <label htmlFor="confirm">{t("auth.register.confirmLabel")}</label>
             <input
               id="confirm"
               type="password"
@@ -111,14 +115,15 @@ export default function RegisterPage() {
               minLength={8}
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
-              placeholder="Repeat your password"
+              placeholder={t("auth.register.confirmPlaceholder")}
               disabled={submitting}
             />
           </div>
 
           <div className="field">
             <label htmlFor="bio">
-              Bio <span className="optional">(optional)</span>
+              {t("auth.register.bioLabel")}{" "}
+              <span className="optional">{t("auth.register.bioOptional")}</span>
             </label>
             <textarea
               id="bio"
@@ -126,7 +131,7 @@ export default function RegisterPage() {
               maxLength={2000}
               value={bio}
               onChange={(e) => setBio(e.target.value)}
-              placeholder="Tell people a little about yourself…"
+              placeholder={t("auth.register.bioPlaceholder")}
               disabled={submitting}
             />
           </div>
@@ -136,12 +141,13 @@ export default function RegisterPage() {
             className="btn btn-primary w-full"
             disabled={submitting || !name || !email || !password || !confirm}
           >
-            {submitting ? "Creating account…" : "Create account"}
+            {submitting ? t("auth.register.submitting") : t("auth.register.submit")}
           </button>
         </form>
 
         <div className="switch-link">
-          Already have an account? <Link to="/login">Sign in</Link>
+          {t("auth.register.hasAccount")}{" "}
+          <Link to="/login">{t("auth.register.signIn")}</Link>
         </div>
       </div>
     </div>

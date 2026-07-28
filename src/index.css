@@ -34,6 +34,7 @@
     "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono",
     Menlo, Consolas, monospace;
+  --font-fa: "Vazirmatn", var(--font-sans);
 }
 
 /* ===========================================================================
@@ -213,3 +214,60 @@ textarea:focus {
     font-size: 16px;
   }
 }
+
+/* ===========================================================================
+   RTL (Right-to-Left) support for Persian and other RTL languages.
+   =========================================================================== */
+html[dir="rtl"] {
+  /* Use Vazirmatn Persian font */
+  --font-sans: "Vazirmatn", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  /* Flip border-l to border-r in RTL for reply quotes */
+  .border-l-\[3px\],
+  .border-l-2 {
+    border-left: none;
+    border-right-width: 3px;
+    border-right-style: solid;
+  }
+}
+
+/* Message bubbles: swap rounded corners in RTL */
+html[dir="rtl"] .rounded-tr-sm {
+  border-top-right-radius: 0;
+  border-top-left-radius: 0.125rem;
+}
+
+html[dir="rtl"] .rounded-bl-sm {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0.125rem;
+}
+
+/* Drawer slides from the right in RTL */
+html[dir="rtl"] .drawer {
+  left: auto;
+  right: 0;
+  -webkit-transform: translateX(100%);
+  transform: translateX(100%);
+}
+html[dir="rtl"] .drawer--open {
+  -webkit-transform: translateX(0);
+  transform: translateX(0);
+}
+html[dir="rtl"] .drawer {
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.4);
+}
+
+/* Resize handle on the left side in RTL */
+html[dir="rtl"] .resize-handle {
+  order: 1;
+}
+
+/* Text alignment for RTL */
+html[dir="rtl"] .text-left {
+  text-align: right;
+}
+html[dir="rtl"] .text-right {
+  text-align: left;
+}
+
