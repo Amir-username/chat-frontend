@@ -8,7 +8,7 @@ import type { PrivateChatListItem, ProfileResponse } from "@/shared/types";
 import { listPrivateChats, startPrivateChat } from "../api/privateChat";
 import { Avatar, UserSearchOverlay } from "@/features/auth";
 import SearchIcon from "@/shared/components/icons/SearchIcon";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
+import LanguageSwitcher from "@/shared/components/LanguageSwitcher";
 
 interface PrivateChatListProps {
   activeChatId: number | null;

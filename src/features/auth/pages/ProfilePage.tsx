@@ -1,11 +1,11 @@
 import { useRef, useState, type FormEvent, type ChangeEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/features/auth";
 import { updateMyProfile, uploadProfileImage } from "@/features/auth";
 import { resolveImageUrl } from "@/shared";
-import { colorForUser, readableTextOn } from "@/features/chat/utils/colors";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { colorForUser, readableTextOn } from "@/shared/utils/colors";
+import LanguageSwitcher from "@/shared/components/LanguageSwitcher";
 
 export default function ProfilePage() {
   const { t } = useTranslation();
@@ -25,8 +25,9 @@ export default function ProfilePage() {
   const [imageError, setImageError] = useState<string | null>(null);
 
   if (!user) {
-    navigate("/login", { replace: true });
-    return null;
+    // The route is already guarded in App.tsx; this is a safety net.
+    // <Navigate> (not navigate()) — side effects don't belong in render.
+    return <Navigate to="/login" replace />;
   }
 
   async function handleSaveProfile(e: FormEvent) {
@@ -89,7 +90,7 @@ export default function ProfilePage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <button
-            onClick={() => navigate("/chat")}
+            onClick={() => navigate("/private-chat")}
             className="btn btn-ghost px-3 py-1.5 text-sm"
           >
             {t("profile.backToChat")}

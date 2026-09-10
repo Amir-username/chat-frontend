@@ -3,7 +3,7 @@
 //
 // Each user gets a stable color derived from their ID, so the same user is
 // always the same color — across reloads, reconnects, and (since every client
-// uses the same hash + palette) across all participants in a room.
+// uses the same hash + palette) across all participants in a chat.
 //
 // The palette is tuned for the dark theme: every color is bright enough to
 // read against --bg-0 / --bg-2 but not so saturated that it hurts.

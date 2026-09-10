@@ -12,7 +12,7 @@
 
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { colorForUser, readableTextOn } from "@/features/chat/utils/colors";
+import { colorForUser, readableTextOn } from "@/shared/utils/colors";
 import { resolveImageUrl } from "@/shared";
 import type { UserId } from "@/shared/types";
 

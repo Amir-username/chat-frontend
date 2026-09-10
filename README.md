@@ -1,6 +1,6 @@
 # chat-frontend
 
-A modern real-time chat application frontend built with **React**, **TypeScript**, **Vite**, and **Tailwind CSS 4**. This is the frontend part of the [chat-service](https://github.com/Amir-username/chat-service) backend project (FastAPI + [fast-auth](https://github.com/Amir-username/fast-auth)).
+A modern real-time **private chat** (direct messages) frontend built with **React**, **TypeScript**, **Vite**, and **Tailwind CSS 4**. This is the frontend part of the [chat-service](https://github.com/Amir-username/chat-service) backend project (FastAPI + [fast-auth](https://github.com/Amir-username/fast-auth)).
 
 **Live Demo:** [https://chat-frontend-psi-wine.vercel.app/](https://chat-frontend-psi-wine.vercel.app/)
 
@@ -10,38 +10,37 @@ A modern real-time chat application frontend built with **React**, **TypeScript*
 
 ### Authentication
 - **Register & Login** — JSON-based auth with `/auth/register` and `/auth/login/json` endpoints
-- **Auto Hydration** — on page reload, calls `/auth/me` to restore the current user session
+- **Auto Hydration** — on page reload, calls `/auth/me/profile` to restore the current user session
 - **Logout** — revokes both access and refresh tokens on the backend
 
 ### Token Management
 - **Transparent Auto-Refresh** — an axios response interceptor catches `401` errors and automatically calls `/auth/refresh` to obtain a new access token, then replays the original request without the caller ever seeing the error
-- **Concurrent Request Coalescing** — when multiple requests fail with 401 at the same time, only a single refresh call is made; all other requests are queued and replayed once the new token arrives
+- **Concurrent Request Coalescing** — when multiple requests (REST or WebSocket reconnects) need a refresh at the same time, only a single refresh call is made; everyone awaits the same promise
+- **WS-Aware Refresh** — the private-chat WebSocket refreshes an expired access token *before* reconnecting, so a long-lived session recovers cleanly instead of failing forever
 - **Graceful Fallback** — if the refresh itself fails, tokens are cleared and the user is redirected to the login page
 
-### Real-Time Chat
-- **WebSocket Connection** — connects to `/ws/chat/{room_id}?token=...` for instant message delivery
+### Real-Time Private Chat
+- **WebSocket Connection** — connects to `/private/ws/chat/{chat_id}?token=...` for instant message delivery
 - **Auto-Reconnect** — on accidental disconnection, reconnects with exponential backoff (1s → 2s → 4s → ... → 15s cap)
-- **History Replay** — the server sends full room history on connect, so the message list is immediately populated when joining a room
-- **System Messages** — join/leave notifications are rendered centered and muted for a clean look
+- **History on Connect** — the server sends the last 50 messages on connect; the UI merges it safely with the initial REST fetch (no duplicate or lost messages)
+- **Reply / Quote** — swipe or tap the reply button on any message to quote it (Telegram-style)
+- **System Messages** — online/offline notices are rendered centered and muted
+- **StrictMode-Safe** — stale-socket guards survive React 18 StrictMode double-mounting without connect/disconnect storms
 
-### Rooms
-- **Default Rooms** — `general`, `random`, and `help` are available out of the box
-- **Join Any Room** — an ad-hoc input lets you join any room by name
-- **Persistent Sessions** — joined rooms are saved to `localStorage` and restored across reloads
+### Profiles
+- **Editable Own Profile** — name, bio, and profile image upload (JPG/PNG/GIF/WebP, max 5 MB)
+- **Public Profiles** — `/users/:userId` shows any user's name, avatar, and bio, with a "Message" button to start a chat
+- **User Search** — debounced, abortable search overlay (find users by name, self excluded)
 
 ### UI/UX
 - **Dark Theme** — modern dark design using Tailwind CSS 4 utility classes
-- **Message Grouping** — consecutive messages from the same user are visually grouped with avatars
+- **RTL Support** — full Persian (فارسی) translation with RTL layout and the Vazirmatn font
+- **Message Bubbles** — own messages right-aligned with accent color, per-user stable avatar colors
 - **Keyboard Shortcuts** — `Enter` to send, `Shift+Enter` for a new line
-- **Responsive Layout** — sidebar + chat area layout that works on different screen sizes
+- **Responsive Layout** — conversation list + chat panes adapt to mobile (stacked with back navigation)
 
-### Internationalization (i18n)
-- **Multi-Language Support** — powered by `i18next` and `react-i18next` for translatable UI strings
-
-### State Management
-- **Zustand** — lightweight global state management for application-wide data
-
-### Type Safety
+### State & Type Safety
+- **Zustand** — lightweight global state management (module-level singleton stores)
 - **Typed API Client** — all API wrappers and WebSocket messages are fully typed, mirroring the Pydantic schemas defined in the backend
 
 ---
@@ -51,13 +50,13 @@ A modern real-time chat application frontend built with **React**, **TypeScript*
 | Technology | Purpose |
 |---|---|
 | [React](https://react.dev/) 18 | UI library |
-| [TypeScript](https://www.typescriptlang.org/) 6 | Type safety |
+| [TypeScript](https://www.typescriptlang.org/) | Type safety |
 | [Vite](https://vitejs.dev/) 5 | Build tool & dev server |
 | [Tailwind CSS](https://tailwindcss.com/) 4 | Utility-first styling |
 | [Axios](https://axios-http.com/) | HTTP client with interceptors |
 | [Zustand](https://zustand.docs.pmnd.rs/) | Global state management |
 | [React Router](https://reactrouter.com/) 6 | Client-side routing |
-| [i18next](https://www.i18next.com/) | Internationalization |
+| [i18next](https://www.i18next.com/) | Internationalization (en/fa + RTL) |
 
 ---
 
@@ -66,17 +65,20 @@ A modern real-time chat application frontend built with **React**, **TypeScript*
 This frontend is designed to work with the [chat-service](https://github.com/Amir-username/chat-service) backend. The backend provides:
 
 - FastAPI-based REST API with authentication via [fast-auth](https://github.com/Amir-username/fast-auth)
-- WebSocket endpoint for real-time messaging
+- WebSocket endpoint for real-time private messaging
 - JWT access + refresh token authentication
 
 | Endpoint | Method | Notes |
 |---|---|---|
 | `/auth/register` | POST | Custom endpoint with `name` field |
 | `/auth/login/json` | POST | JSON login (preferred over OAuth2 form) |
-| `/auth/refresh` | POST | Called automatically by the axios interceptor on 401 |
+| `/auth/refresh` | POST | Called automatically on 401 and before WS reconnects |
 | `/auth/logout` | POST | Revokes access + refresh tokens |
-| `/auth/me` | GET | Hydrates the current user on page load |
-| `/ws/chat/{room_id}` | WS | `?token=<access_token>` query param |
+| `/auth/me/profile` | GET | Hydrates the current user on page load |
+| `/auth/search` | GET | User search by name |
+| `/private/chats` | GET/POST | List chats / start a chat with a user |
+| `/private/chats/{id}` | GET | Chat details + message page |
+| `/private/ws/chat/{chat_id}` | WS | `?token=<access_token>` query param |
 
 ---
 
@@ -107,7 +109,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173). The Vite dev server proxies `/api/*` and `/ws/*` to `http://localhost:8000` so the browser uses same-origin requests — no CORS configuration needed on the backend.
+Open [http://localhost:5173](http://localhost:5173). With `VITE_API_BASE_URL` left empty (the default), the Vite dev server proxies `/api`, `/private/ws`, and `/uploads` to the deployed backend (`https://chat-service.fastapicloud.dev` — adjust the proxy targets in `vite.config.ts` to point at your local backend), so the browser uses same-origin requests — no CORS configuration needed.
 
 ---
 
@@ -118,14 +120,14 @@ npm run build      # outputs to dist/
 npm run preview    # serve the production build locally
 ```
 
-To point the frontend at a deployed backend instead of localhost, set `VITE_API_BASE_URL` before building:
+To point the frontend at a deployed backend instead of the dev proxy, set `VITE_API_BASE_URL` before building (see `.env.example`):
 
 ```bash
 # .env.production
 VITE_API_BASE_URL=https://chat-api.example.com
 ```
 
-The WebSocket URL is derived from this same value (http → ws, https → wss).
+The REST client, image URLs, and WebSocket URLs all derive from this single value (`http(s)` is converted to `ws(s)` for sockets).
 
 ---
 
@@ -133,26 +135,21 @@ The WebSocket URL is derived from this same value (http → ws, https → wss).
 
 ```
 src/
-├── api/
-│   ├── auth.ts          # typed wrappers around /auth/* endpoints
-│   ├── client.ts        # axios instance + 401-refresh interceptor
-│   └── tokens.ts        # localStorage token persistence
-├── components/
-│   ├── MessageInput.tsx
-│   ├── MessageList.tsx
-│   └── RoomSidebar.tsx
-├── context/
-│   └── AuthContext.tsx  # user/session state + login/register/logout
-├── hooks/
-│   └── useChatSocket.ts # WebSocket lifecycle + reconnect logic
-├── pages/
-│   ├── ChatPage.tsx
-│   ├── LoginPage.tsx
-│   └── RegisterPage.tsx
-├── types/
-│   └── index.ts         # API + WS message types mirroring backend schemas
+├── features/
+│   ├── auth/            # login/register/profile pages, authStore (Zustand),
+│   │                    # Avatar, user search overlay, profile hooks
+│   └── private-chat/    # PrivateChatPage, chat list, message list,
+│                        # usePrivateChatSocket (WS + refresh + backoff)
+├── shared/
+│   ├── api/             # config (base URL), client (axios + refresh
+│   │                    # interceptor), tokens, image URL helper
+│   ├── components/      # MessageInput, LanguageSwitcher, SearchIcon
+│   ├── hooks/           # useDebouncedValue, useMediaQuery
+│   ├── types/           # API + WS message types mirroring backend schemas
+│   └── utils/           # stable per-user color hashing
+├── i18n/                # en/fa locales, RTL direction handling
 ├── App.tsx              # routes + protected-route gating
-├── main.tsx             # entry — BrowserRouter + AuthProvider
+├── main.tsx             # entry — BrowserRouter
 └── index.css            # dark theme tokens + base styles
 ```
 
@@ -163,17 +160,18 @@ src/
 ### Auto-Refresh Flow
 
 1. Every request goes through an axios request interceptor that attaches `Authorization: Bearer <access_token>` from `localStorage`.
-2. If the backend returns 401 (access token expired), the response interceptor calls `/auth/refresh` with the stored refresh token.
+2. If the backend returns 401 (access token expired), the response interceptor calls `refreshAccessToken()` — a shared, coalesced helper.
 3. On success, it stores the new token pair and **replays the original request** — the caller never sees the 401.
-4. If multiple requests 401 simultaneously, only one refresh flies; the others are queued and replayed once the refresh resolves.
+4. If multiple requests 401 simultaneously, they all await the same refresh promise; only one request flies.
 5. If refresh itself fails, tokens are cleared and the user is redirected to `/login`.
 
 ### WebSocket Reconnect Flow
 
-- On room change, the hook closes the old socket and opens a new one to `/ws/chat/{room_id}?token=<access>`.
-- On accidental close (not triggered by us), it reconnects with exponential backoff: 1s → 2s → 4s → ... → 15s cap.
-- The server sends a `history` message immediately on connect; the hook unwraps it and feeds each historical message to the UI as if it had just arrived, so the message list shows full room history on entry.
-- System messages (`X joined the room` / `X left the room`) are rendered centered and muted.
+- On chat change, the hook closes the old socket and opens a new one to `/private/ws/chat/{chat_id}?token=<access>`.
+- Before connecting, if the stored access token is expired, it is refreshed via the same shared helper — so a session that outlived its access token reconnects cleanly.
+- On accidental close, it reconnects with exponential backoff: 1s → 2s → 4s → ... → 15s cap.
+- The server sends the last 50 messages (`history`) on connect; the UI replaces its list with that snapshot (deduplicated against the initial REST fetch), so the message list is always current after a reconnect.
+- System messages (`X is online` / `X went offline`) are rendered centered and muted.
 
 ---
 

@@ -2,14 +2,15 @@
 // PrivateChatPage — two-pane direct-messages view.
 // ---------------------------------------------------------------------------
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import PrivateChatList from "../components/PrivateChatList";
 import PrivateMessageList from "../components/PrivateMessageList";
 import MessageInput, {
   type ReplyTarget,
-} from "@/features/chat/components/MessageInput";
+} from "@/shared/components/MessageInput";
+import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
 import {
   usePrivateChatSocket,
   type PrivateConnectionStatus,
@@ -60,16 +61,24 @@ export default function PrivateChatPage() {
 
   const [messages, setMessages] = useState<PrivateChatWsMessage[]>([]);
 
+  // True while the initial REST fetch for the active chat is in flight.
+  // The WS history handler checks this ref (synchronously maintained) to
+  // decide whether history or REST owns initial message population —
+  // whichever finishes first wins, and neither clobbers the other.
+  const loadingChatRef = useRef(false);
+
   const [replyTo, setReplyTo] = useState<ReplyTarget | null>(null);
 
   useEffect(() => {
     setReplyTo(null);
     if (activeChatId == null) {
+      loadingChatRef.current = false;
       setActiveChat(null);
       setMessages([]);
       return;
     }
     let cancelled = false;
+    loadingChatRef.current = true;
     setLoadingChat(true);
     setChatError(null);
     setMessages([]);
@@ -78,8 +87,12 @@ export default function PrivateChatPage() {
         const data = await getPrivateChat(activeChatId);
         if (!cancelled) {
           setActiveChat(data);
-          setMessages(
-            data.messages.map((m) => ({ type: "message" as const, ...m })),
+          // Only populate if the socket hasn't already delivered messages
+          // (history/live) — otherwise we'd drop anything received meanwhile.
+          setMessages((prev) =>
+            prev.length > 0
+              ? prev
+              : data.messages.map((m) => ({ type: "message" as const, ...m })),
           );
         }
       } catch (err) {
@@ -89,7 +102,10 @@ export default function PrivateChatPage() {
           );
         }
       } finally {
-        if (!cancelled) setLoadingChat(false);
+        if (!cancelled) {
+          loadingChatRef.current = false;
+          setLoadingChat(false);
+        }
       }
     })();
     return () => {
@@ -100,7 +116,10 @@ export default function PrivateChatPage() {
   const onMessage = useCallback((msg: PrivateChatWsMessage) => {
     setMessages((prev) => {
       if (msg.type === "history") {
-        if (prev.length > 0) return prev;
+        // While the initial REST fetch is in flight, it owns population.
+        if (loadingChatRef.current) return prev;
+        // Otherwise the server's latest-50 snapshot is authoritative —
+        // this also cleanly covers reconnects after a disconnection.
         return msg.messages.map((m) => ({ type: "message" as const, ...m }));
       }
       if (msg.type === "message" && "id" in msg) {
@@ -138,14 +157,7 @@ export default function PrivateChatPage() {
     });
   }, []);
 
-  const [isMobile, setIsMobile] = useState(
-    typeof window !== "undefined" ? window.innerWidth < 768 : false,
-  );
-  useEffect(() => {
-    const onResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
+  const isMobile = useMediaQuery("(max-width: 768px)");
 
   const showListOnly = isMobile && activeChatId == null;
   const showChatOnly = isMobile && activeChatId != null;
@@ -190,7 +202,7 @@ export default function PrivateChatPage() {
             activeChatId={activeChatId}
             onSelect={(id) => setActiveChatId(id)}
             showBackButton={isMobile}
-            onBack={() => navigate("/chat")}
+            onBack={() => setActiveChatId(null)}
           />
         </div>
       )}

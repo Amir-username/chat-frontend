@@ -13,7 +13,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuthStore, useUserProfile, Avatar } from "@/features/auth";
 import { startPrivateChat } from "@/features/private-chat";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
+import LanguageSwitcher from "@/shared/components/LanguageSwitcher";
 
 export default function UserProfilePage() {
   const { t } = useTranslation();
@@ -91,7 +91,6 @@ export default function UserProfilePage() {
               <h2 className="mt-4 text-xl font-semibold text-fg-0">
                 {profile.name}
               </h2>
-              <p className="text-sm text-fg-2 mt-1">{profile.email}</p>
 
               {isSelf ? (
                 <Link

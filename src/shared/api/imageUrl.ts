@@ -2,19 +2,19 @@
 // Image URL helper.
 //
 // The backend returns profile image URLs as relative paths (e.g.
-// `/uploads/profile_images/1_abc.jpg`). In dev the Vite proxy forwards /uploads
-// to the backend, so relative paths work as-is. In production with
+// `/uploads/profile_images/1_abc.jpg`). In dev the Vite proxy forwards
+// /uploads to the backend, so relative paths work as-is. In production with
 // VITE_API_BASE_URL set, we need to prepend that base URL.
 // ---------------------------------------------------------------------------
 
-const API_BASE = "https://chat-service.fastapicloud.dev/";
+import { API_BASE_URL } from "./config";
 
 /**
  * Resolve a (possibly relative) image URL to one the browser can fetch.
  *
  * - `null` / `undefined` / `""` → returns null (caller should render a fallback)
  * - Already absolute (`http://...`, `https://...`, `data:...`) → returned as-is
- * - Relative (`/uploads/...`) → prepended with VITE_API_BASE_URL (empty in dev,
+ * - Relative (`/uploads/...`) → prepended with API_BASE_URL (empty in dev,
  *   so the Vite proxy handles it)
  */
 export function resolveImageUrl(url: string | null | undefined): string | null {
@@ -23,5 +23,5 @@ export function resolveImageUrl(url: string | null | undefined): string | null {
   if (/^(https?:)?\/\//.test(url) || url.startsWith("data:")) return url;
   // Relative path — prepend the API base URL (empty string in dev, so this
   // is a no-op there; the Vite proxy handles /uploads).
-  return `${API_BASE}${url}`;
+  return `${API_BASE_URL}/${url.replace(/^\/+/, "")}`;
 }

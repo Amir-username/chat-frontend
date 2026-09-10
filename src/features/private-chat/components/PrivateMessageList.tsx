@@ -245,7 +245,7 @@ function PrivateMessageList({
             {!isOwn && (
               <div className={row.showAvatar ? "visible" : "invisible"}>
                 <Avatar
-                  userId={otherUserId}
+                  userId={row.senderId ?? otherUserId}
                   name={otherUserName}
                   imageUrl={otherUserImage}
                   size={32}

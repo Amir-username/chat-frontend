@@ -21,7 +21,7 @@
 //   {status === "success" && results.map(u => <UserRow user={u} />)}
 // ---------------------------------------------------------------------------
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { searchUsers } from "../api/profile";
 import { useAuthStore } from "../store/authStore";
 import { useDebouncedValue } from "@/shared";
@@ -125,11 +125,9 @@ export function useUserSearch(
         const msg =
           err instanceof Error
             ? err.message
-            : typeof err === "object" &&
-                err !== null &&
-                "response" in err
-              ? (err as { response?: { data?: { detail?: string } } }).response
-                  ?.data?.detail ?? "Search failed"
+            : typeof err === "object" && err !== null && "response" in err
+              ? ((err as { response?: { data?: { detail?: string } } }).response
+                  ?.data?.detail ?? "Search failed")
               : "Search failed";
         setError(msg);
         setStatus("error");
@@ -148,14 +146,21 @@ export function useUserSearch(
     };
   }, [debouncedQuery, limit]);
 
-  function reset() {
+  // reset MUST have a stable identity (useCallback with empty deps):
+  // useState setters are stable and abortRef is a ref, so nothing here needs
+  // to be a dependency. Consumers put `reset` in effect dependency arrays
+  // (e.g. UserSearchOverlay resets when the dialog closes) — an unstable
+  // reference would re-run those effects on EVERY render, and since
+  // setResults([]) always produces a new array (never Object.is-equal), it
+  // would re-render forever: "Maximum update depth exceeded".
+  const reset = useCallback(() => {
     abortRef.current?.abort();
     abortRef.current = null;
     setQuery("");
     setResults([]);
     setStatus("idle");
     setError(null);
-  }
+  }, []);
 
   return {
     query,

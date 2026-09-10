@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/features/auth";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
+import LanguageSwitcher from "@/shared/components/LanguageSwitcher";
 
 export default function LoginPage() {
   const { t } = useTranslation();
@@ -20,7 +20,7 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       await login({ email, password });
-      navigate("/chat");
+      navigate("/private-chat", { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : t("auth.login.loginFailed"));
     } finally {

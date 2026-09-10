@@ -7,7 +7,7 @@
 //     construction, so there's no need for useCallback.
 //   - Components subscribe to only the slices they care about via selectors:
 //       const user = useAuthStore(s => s.user)
-//     so e.g. ChatPage won't re-render when `error` changes.
+//     so e.g. PrivateChatPage won't re-render when `error` changes.
 //   - No useMemo on a context value object (which was the load-bearing
 //     optimization in the Context version) — Zustand handles that internally.
 //
@@ -28,7 +28,6 @@ import * as authApi from "../api/auth";
 import { getMyProfile } from "../api/profile";
 import { clearUserProfileCache } from "../hooks/useUserProfile";
 import { tokenStorage } from "@/shared/api/tokens";
-import { useRoomsStore } from "@/features/chat/store/roomsStore";
 import type {
   LoginPayload,
   ProfileResponse,
@@ -115,9 +114,6 @@ export const useAuthStore = create<AuthState>((set) => ({
     } finally {
       tokenStorage.clear();
       set({ user: null });
-      // Clear persisted room navigation so the next user doesn't inherit
-      // the previous user's joined rooms / active room.
-      useRoomsStore.getState().resetRooms();
       // Clear the cached public-profile lookup so the next user doesn't see
       // the previous user's fetched profile images / bios in chat.
       clearUserProfileCache();

@@ -2,5 +2,12 @@ node_modules
 dist
 dist-ssr
 *.local
-.env.local
+.env
+.env.*
+!.env.example
 .DS_Store
+
+# Build artifacts
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts

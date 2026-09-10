@@ -2,15 +2,16 @@
 // Typed axios client for the chat-service backend.
 //
 // Key behaviours:
-//   1. baseURL is "/api" in dev (proxied to http://localhost:8000 by Vite) or
-//      VITE_API_BASE_URL in production.
+//   1. baseURL comes from shared/api/config.ts — VITE_API_BASE_URL in
+//      production, "/api" (Vite proxy) in development.
 //   2. Request interceptor attaches `Authorization: Bearer <access>` if present.
 //   3. Response interceptor handles 401:
-//        - try to refresh the access token via /auth/refresh
+//        - refresh the access token via /auth/refresh (refreshAccessToken)
 //        - on success, retry the original request once with the new token
 //        - on failure, clear tokens and redirect to /login
-//   4. Concurrent 401s are coalesced — only one refresh request flies at a
-//      time; queued requests are replayed once it resolves.
+//   4. Concurrent 401s are coalesced — refreshAccessToken() returns the SAME
+//      in-flight promise to every caller, so only one refresh request flies
+//      at a time. WebSocket hooks reuse the same helper before reconnecting.
 // ---------------------------------------------------------------------------
 
 import axios, {
@@ -21,11 +22,10 @@ import axios, {
 } from "axios";
 import type { ApiErrorBody, TokenOut } from "@/shared/types";
 import { tokenStorage } from "./tokens";
-
-const baseURL = "https://chat-service.fastapicloud.dev";
+import { AXIOS_BASE_URL } from "./config";
 
 export const api: AxiosInstance = axios.create({
-  baseURL,
+  baseURL: AXIOS_BASE_URL,
   headers: { "Content-Type": "application/json" },
 });
 
@@ -33,19 +33,41 @@ export const api: AxiosInstance = axios.create({
 // Refresh-on-401 machinery
 // ---------------------------------------------------------------------------
 
-let isRefreshing = false;
-let pendingQueue: Array<{
-  resolve: (token: string) => void;
-  reject: (err: unknown) => void;
-}> = [];
+/** The in-flight refresh promise, shared by all callers (axios interceptor,
+ *  WebSocket hooks, anything else that needs a fresh access token). */
+let refreshInFlight: Promise<string> | null = null;
 
-/** Replay every queued request with the new access token. */
-function flushQueue(token: string | null, error: unknown = null): void {
-  pendingQueue.forEach((p) => {
-    if (error) p.reject(error);
-    else p.resolve(token as string);
-  });
-  pendingQueue = [];
+/**
+ * Refresh the access token using the stored refresh token.
+ *
+ * - Coalesced: while a refresh is in flight, every caller awaits the same
+ *   promise — exactly one network request is made.
+ * - On success, stores the new token pair and resolves with the access token.
+ * - On failure, clears tokens and redirects to /login, then rejects.
+ */
+export function refreshAccessToken(): Promise<string> {
+  if (refreshInFlight) return refreshInFlight;
+
+  const refreshToken = tokenStorage.refresh;
+  if (!refreshToken) {
+    return Promise.reject(new Error("No refresh token"));
+  }
+
+  refreshInFlight = axios
+    .post<TokenOut>(
+      `${AXIOS_BASE_URL}/auth/refresh`,
+      { refresh_token: refreshToken },
+      { headers: { "Content-Type": "application/json" } },
+    )
+    .then(({ data }) => {
+      tokenStorage.set(data);
+      return data.access_token;
+    })
+    .finally(() => {
+      refreshInFlight = null;
+    });
+
+  return refreshInFlight;
 }
 
 interface RetriableConfig extends InternalAxiosRequestConfig {
@@ -80,53 +102,23 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // If another request is already refreshing, queue this one.
-    if (isRefreshing) {
-      return new Promise((resolve, reject) => {
-        pendingQueue.push({
-          resolve: (token) => {
-            original.headers!.Authorization = `Bearer ${token}`;
-            original._retried = true;
-            resolve(api(original));
-          },
-          reject,
-        });
-      });
-    }
-
     // No refresh token? Bail to login.
-    const refreshToken = tokenStorage.refresh;
-    if (!refreshToken) {
+    if (!tokenStorage.refresh) {
       tokenStorage.clear();
       redirectToLogin();
       return Promise.reject(error);
     }
 
-    isRefreshing = true;
+    // Refresh (coalesced with any other concurrent 401s) and retry once.
     try {
-      // Hit /auth/refresh directly via a bare axios call so we don't recurse
-      // through this interceptor.
-      const { data } = await axios.post<TokenOut>(
-        `${baseURL}/auth/refresh`,
-        { refresh_token: refreshToken },
-        { headers: { "Content-Type": "application/json" } },
-      );
-      tokenStorage.set(data);
-
-      // Replay queued requests with the fresh token.
-      flushQueue(data.access_token);
-
-      // Retry the original request.
-      original.headers!.Authorization = `Bearer ${data.access_token}`;
+      const token = await refreshAccessToken();
+      original.headers!.Authorization = `Bearer ${token}`;
       original._retried = true;
       return api(original);
     } catch (refreshErr) {
-      flushQueue(null, refreshErr);
       tokenStorage.clear();
       redirectToLogin();
       return Promise.reject(refreshErr);
-    } finally {
-      isRefreshing = false;
     }
   },
 );
@@ -142,7 +134,7 @@ function redirectToLogin(): void {
 }
 
 // ---------------------------------------------------------------------------
-// Convenience wrapper for typed requests.
+// Convenience wrappers for typed requests.
 // ---------------------------------------------------------------------------
 
 export async function apiGet<T>(

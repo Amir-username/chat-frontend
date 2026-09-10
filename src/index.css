@@ -144,55 +144,6 @@ textarea:focus {
   .auth-card .switch-link {
     @apply text-center mt-5 text-[13px] text-fg-1;
   }
-
-  /* Sidebar resize handle (desktop only) */
-  .resize-handle {
-    @apply relative z-[5] w-[7px] flex-shrink-0 cursor-col-resize
-           bg-transparent transition-colors duration-150;
-  }
-  .resize-handle::before {
-    content: "";
-    @apply absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-0.5
-           bg-bg-3 transition-colors duration-150;
-  }
-  .resize-handle:hover::before,
-  .resize-handle--active::before {
-    background: var(--color-accent);
-  }
-  .resize-handle--active {
-    background: rgba(99, 102, 241, 0.15);
-  }
-
-  /* Mobile drawer */
-  .drawer {
-    @apply fixed top-0 left-0 bottom-0 z-50 max-w-[320px]
-           -translate-x-full transition-transform duration-200 ease-out;
-    width: 85vw;
-    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
-  }
-  .drawer--open {
-    @apply translate-x-0;
-  }
-  .drawer-backdrop {
-    @apply fixed inset-0 z-40 bg-black/50;
-    animation: fade-in 0.2s ease;
-  }
-  @keyframes fade-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-
-  /* Hamburger button */
-  .hamburger {
-    @apply inline-flex items-center justify-center w-9 h-9 rounded-md
-           text-fg-1 flex-shrink-0 transition-colors;
-  }
-  .hamburger:hover {
-    @apply bg-bg-2 text-fg-0;
-  }
-  .hamburger:active {
-    @apply bg-bg-3;
-  }
 }
 
 /* ===========================================================================
@@ -243,25 +194,8 @@ html[dir="rtl"] .rounded-bl-sm {
   border-bottom-right-radius: 0.125rem;
 }
 
-/* Drawer slides from the right in RTL */
-html[dir="rtl"] .drawer {
-  left: auto;
-  right: 0;
-  -webkit-transform: translateX(100%);
-  transform: translateX(100%);
-}
-html[dir="rtl"] .drawer--open {
-  -webkit-transform: translateX(0);
-  transform: translateX(0);
-}
-html[dir="rtl"] .drawer {
-  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.4);
-}
-
-/* Resize handle on the left side in RTL */
-html[dir="rtl"] .resize-handle {
-  order: 1;
-}
+/* Drawer slides from the right in RTL
+   (drawer/hamburger removed with the rooms chat — kept out intentionally) */
 
 /* Text alignment for RTL */
 html[dir="rtl"] .text-left {

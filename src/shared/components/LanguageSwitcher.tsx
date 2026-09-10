@@ -13,7 +13,7 @@ export default function LanguageSwitcher({
   /** Extra Tailwind classes applied to the wrapper. */
   className?: string;
 }) {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   function handleChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const lang = e.target.value as Language;
@@ -26,7 +26,7 @@ export default function LanguageSwitcher({
       value={i18n.language as Language}
       onChange={handleChange}
       className={"btn btn-ghost text-xs cursor-pointer " + className}
-      aria-label="Language"
+      aria-label={t("common.language")}
     >
       {LANGUAGES.map((lang) => (
         <option key={lang} value={lang}>
